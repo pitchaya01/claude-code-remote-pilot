@@ -1,21 +1,20 @@
 {
-  "name": "claude-code-pilot",
-  "version": "0.1.0",
-  "description": "Interactive Claude Code supervisor with tmux, Telegram notifications, and auto-resume after usage limits.",
+  "name": "claude-code-remote-pilot",
+  "version": "0.3.0",
+  "description": "Interactive Claude Code supervisor — spawn and monitor multiple Claude sessions from a single terminal.",
   "type": "commonjs",
   "bin": {
-    "claude-pilot": "bin/claude-pilot.js"
+    "claude-remote-pilot": "bin/claude-pilot.js"
   },
   "files": [
     "bin/",
-    "claude-pilot.sh",
+    "lib/",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
-    "start": "node bin/claude-pilot.js",
-    "pilot": "node bin/claude-pilot.js",
-    "check": "node bin/claude-pilot.js --help"
+    "start": "node bin/claude-pilot.js"
   },
   "keywords": [
     "claude-code",
@@ -23,7 +22,8 @@
     "tmux",
     "telegram",
     "agent",
-    "auto-resume"
+    "auto-resume",
+    "multi-session"
   ],
   "author": "mekku",
   "license": "MIT",

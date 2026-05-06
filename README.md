@@ -1,360 +1,187 @@
 # Claude Code Remote Pilot
 
-Interactive Claude Code supervisor using `tmux`, Node.js, and notifications.
+Spawn and supervise multiple Claude Code sessions from a single interactive terminal.
 
-The current MVP keeps Claude Code usable in the normal terminal while adding a small supervisor layer that can detect usage limits, notify you, wait, and send `continue` automatically.
+Run it once. Spawn Claude into as many project directories as you want. Walk away — it handles usage limits, waits for resets, sends `continue` automatically, and notifies you on Telegram. Come back to finished work.
 
-Longer term, this project is moving toward a local multi-session Claude Code dashboard.
+Each Claude session lives in its own named tmux session. You can `tmux attach -t <name>` from any terminal at any time, independently of the pilot.
 
 ---
 
-## Current Status
+## How it works
 
-This repository currently contains:
-
-- `claude-pilot.sh` — bash/tmux watcher MVP
-- `bin/claude-pilot.js` — npm CLI wrapper
-- `package.json` — npm package entry
-- `docs/ARCHITECTURE_UPDATE.md` — architecture direction
-- `TASKS.md` — implementation roadmap
-
-Current mode:
-
-```text
-Human → tmux terminal → Claude Code
-              ↑
-              │
-        Claude Code Remote Pilot
-        - watches output
-        - detects limits
-        - sends notifications
-        - resumes automatically
+```
+npx claude-code-remote-pilot
+  │
+  ├── asks: mount current directory as a session?
+  ├── asks: set up Telegram? (optional)
+  └── opens watch dashboard automatically
 ```
 
-Future mode:
+Watch opens immediately. Press `q` to drop to the command prompt, then `watch` to return.
 
-```text
-Browser Dashboard
-        ↓
-WebSocket / REST API
-        ↓
-Node.js Supervisor
-        ↓
-Session Manager
-        ↓
-tmux sessions
-        ↓
-Claude Code instances
+```
+  Claude Code Remote Pilot
+  ───────────────────────────────────────────────────────────────────
+  #  SESSION             STATUS          UP       USAGE / RESET
+  ───────────────────────────────────────────────────────────────────
+   1 api-refactor        running         12m      ↑1.2k ↓890
+   2 mobile-app          limit 3m        1h 4m    resets 2:00 AM
+   3 old-project         offline         —
+  ───────────────────────────────────────────────────────────────────
+  [1-3]: select session   q: exit watch
 ```
 
----
+Press a number to select a session:
+- **Active**: `[t]` open terminal · `[k]` kill · `Esc` back
+- **Offline**: `[s]` re-spawn · `[r]` remove from history · `Esc` back
 
-## Why This Exists
-
-Claude Code is useful for long-running coding tasks, but usage/rate limits can interrupt the flow.
-
-This project aims to provide:
-
-- persistent Claude Code sessions
-- automatic resume after limit reset
-- human-supervised automation
-- local-first workflow
-- multi-session management
-- eventual web dashboard control
-
-It is intentionally **not** designed as an unsafe fully autonomous agent loop.
-
----
-
-## Features
-
-Current MVP:
-
-- tmux session persistence
-- auto-create Claude tmux session
-- terminal output capture
-- usage/rate limit detection
-- reset-time parsing
-- Telegram notification support
-- automatic `continue` after waiting
-- duplicate event protection
-- resume cooldown protection
-- npm CLI wrapper
-
-Planned:
-
-- Node.js runtime refactor
-- multiple Claude sessions
-- web dashboard
-- WebSocket live output
-- session registry
-- pluggable detectors
-- notification providers
-- persistent session state
-- policy/safety engine
-
----
-
-## Requirements
-
-- Node.js >= 18
-- bash
-- tmux
-- curl
-- python3 recommended for better reset-time parsing
-- Claude Code CLI installed and authenticated
-
-macOS:
+From any terminal, attach directly:
 
 ```bash
-brew install tmux
-```
-
-Ubuntu/Debian:
-
-```bash
-sudo apt install tmux curl python3
+tmux attach -t api-refactor
+# Ctrl+B then D to detach
 ```
 
 ---
 
 ## Install
 
-### From GitHub
-
 ```bash
-git clone https://github.com/mekku/claude-code-pilot.git
-cd claude-code-pilot
-yarn install
+npx claude-code-remote-pilot
 ```
 
-Run locally:
+Or install globally:
 
 ```bash
-yarn pilot
-```
-
-or:
-
-```bash
-node bin/claude-pilot.js
-```
-
-### As npm package later
-
-After publishing:
-
-```bash
-npm install -g claude-code-pilot
-claude-pilot
-```
-
-or:
-
-```bash
-npx claude-code-pilot
+npm install -g claude-code-remote-pilot
+claude-remote-pilot
 ```
 
 ---
 
-## Telegram Setup
+## Requirements
 
-Create a bot with `@BotFather` and get your bot token.
+- Node.js >= 18
+- tmux
+- Claude Code CLI (`npm install -g @anthropic-ai/claude-code`)
 
-Send a message to your bot, then get your chat ID:
+The pilot will prompt you to install missing dependencies on first run.
 
+### Installing tmux manually
+
+**macOS:**
 ```bash
-curl "https://api.telegram.org/bot<BOT_TOKEN>/getUpdates"
+brew install tmux
 ```
 
-Look for:
-
-```json
-"chat": {
-  "id": 123456789
-}
-```
-
-Run:
-
+**Ubuntu / Debian:**
 ```bash
-export TELEGRAM_BOT_TOKEN="xxx"
-export TELEGRAM_CHAT_ID="123456789"
-
-yarn pilot
+sudo apt update && sudo apt install tmux
 ```
 
-Telegram is optional. If not configured, messages are printed locally.
+**Fedora / RHEL:**
+```bash
+sudo dnf install tmux
+```
+
+**Arch:**
+```bash
+sudo pacman -S tmux
+```
+
+**Windows (WSL):**
+```bash
+sudo apt update && sudo apt install tmux
+```
 
 ---
 
-## Basic Usage
+## Commands
 
-Start pilot:
-
-```bash
-yarn pilot
-```
-
-Attach to Claude:
-
-```bash
-tmux attach -t claude
-```
-
-Detach without killing Claude:
-
-```text
-Ctrl+B then D
-```
-
-The watcher keeps running and watches the tmux session.
+| Command | Description |
+|---|---|
+| `spawn <path> [name]` | Start Claude at a path. Name defaults to the directory name. |
+| `list` | One-shot status of all sessions. |
+| `watch` | Live dashboard with offline session history. Press a number to select, `q` to exit. |
+| `attach <name>` | Open a tmux session in the current terminal. |
+| `kill <name>` | Stop a session. |
+| `help` | Show command reference. |
+| `exit` | Quit the pilot. Sessions keep running in tmux. |
 
 ---
 
-## Environment Variables
+## Telegram setup
+
+Create a bot via `@BotFather` and get your token.
+
+Get your chat ID:
+
+```bash
+curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
+```
+
+Run the pilot — it will ask for these values interactively, or set them as environment variables:
+
+```bash
+export TELEGRAM_BOT_TOKEN="your-token"
+export TELEGRAM_CHAT_ID="your-chat-id"
+npx claude-code-remote-pilot
+```
+
+---
+
+## Environment variables
 
 | Variable | Default | Description |
-|---|---:|---|
-| `TELEGRAM_BOT_TOKEN` | empty | Telegram bot token |
-| `TELEGRAM_CHAT_ID` | empty | Telegram chat ID |
-| `CLAUDE_SESSION` | `claude` | tmux session name |
-| `CLAUDE_COMMAND` | `claude` | command used to start Claude |
-| `CHECK_INTERVAL_SECONDS` | `30` | watcher interval |
-| `LIMIT_FALLBACK_WAIT_SECONDS` | `300` | fallback wait if reset time cannot be parsed |
-| `POST_RESUME_COOLDOWN_SECONDS` | `180` | avoid repeated resume spam |
-| `CAPTURE_LINES` | `500` | number of tmux output lines to inspect |
-| `RESUME_COMMAND` | `continue` | command sent after reset |
-| `START_IF_MISSING` | `1` | auto-create tmux session if missing |
-| `LIMIT_REGEX` | built-in | custom regex for limit detection |
-| `PERMISSION_REGEX` | built-in | custom regex for permission detection |
-
-Example:
-
-```bash
-CLAUDE_SESSION=claude-buildx-api \
-CLAUDE_COMMAND="claude" \
-TELEGRAM_BOT_TOKEN="xxx" \
-TELEGRAM_CHAT_ID="123456789" \
-yarn pilot
-```
+|---|---|---|
+| `TELEGRAM_BOT_TOKEN` | — | Telegram bot token |
+| `TELEGRAM_CHAT_ID` | — | Telegram chat ID |
+| `CLAUDE_COMMAND` | `claude` | Command used to start Claude |
 
 ---
 
-## Recommended Claude Workflow
+## Recommended Claude workflow
 
-For long-running work, ask Claude to maintain external state:
+For long-running tasks, ask Claude to keep external state:
 
-```text
+```
 Maintain TASK_STATE.md.
-After every meaningful step:
-- update completed work
-- update current status
-- update next exact action
-
-If interrupted:
-- read TASK_STATE.md
-- resume from the next unfinished step.
+After every meaningful step update: what's done, current status, next exact action.
+If interrupted, read TASK_STATE.md and resume from where you left off.
 ```
 
-This matters because LLM context can drift over long sessions. External state is the real resume brain.
+Context can drift over long sessions. External state is the real resume brain.
 
 ---
 
-## Safety Notes
+## Safety
 
-Avoid starting with:
+Start Claude without `--dangerously-skip-permissions` unless you know what you're doing. The pilot is designed for human-supervised workflows:
 
-```bash
-claude --dangerously-skip-permissions
-```
-
-That mode allows Claude to execute commands and modify files without asking.
-
-Claude Code Pilot should begin as a **human-supervised** tool:
-
-Allowed early:
-
-- watch output
-- notify
-- send `continue`
-- send user-provided input
-- show latest results
-
-Avoid early:
-
-- auto-approve permissions
-- arbitrary remote shell execution
-- autonomous destructive actions
+- watches output
+- sends notifications
+- sends `continue` after limit resets
+- does **not** auto-approve permissions or execute arbitrary commands
 
 ---
 
 ## Roadmap
 
-See:
-
-- [`docs/ARCHITECTURE_UPDATE.md`](docs/ARCHITECTURE_UPDATE.md)
-- [`TASKS.md`](TASKS.md)
-
-High-level phases:
-
-1. tmux watcher MVP
-2. Node.js runtime refactor
-3. multi-session support
-4. detection engine
-5. notification providers
-6. web dashboard
-7. persistent state
-8. safety/policy engine
-9. optional node-pty backend
-
----
-
-## Target Dashboard Concept
-
-Planned local dashboard:
-
-```text
-Sidebar
-├── claude-buildx-api
-├── claude-pos-mobile
-├── claude-auth-refactor
-└── claude-research
-
-Main Panel
-├── live output
-├── status badge
-├── input box
-├── continue button
-└── auto-resume toggle
-```
-
-This allows normal local terminal interaction when at the machine, plus remote-lite control when away.
+- [x] tmux session management
+- [x] usage limit detection and auto-resume
+- [x] Telegram notifications
+- [x] interactive REPL — spawn, watch, attach, kill
+- [x] multi-session support
+- [ ] web dashboard (sessions connect to pilot server)
+- [x] persistent session history with offline session display
+- [ ] pluggable notification providers
+- [ ] safety / policy engine
 
 ---
 
 ## Philosophy
 
-Claude Code Pilot is intended to become:
+A human-supervised local runtime for Claude Code. Not a fully autonomous agent loop.
 
-```text
-human-supervised local AI runtime
-```
-
-not:
-
-```text
-fully autonomous AI operator
-```
-
-The system prioritizes:
-
-- persistence
-- observability
-- recoverability
-- resumability
-- multi-session control
-- human intervention
-- practical workflows
-
-Small tools first. Spaceship later.
+Small tools first. Dashboard later.
