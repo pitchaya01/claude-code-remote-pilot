@@ -1,6 +1,6 @@
 {
   "name": "claude-code-remote-pilot",
-  "version": "0.4.9",
+  "version": "0.5.0",
   "description": "Interactive Claude Code supervisor — spawn and monitor multiple Claude sessions from a single terminal.",
   "type": "commonjs",
   "repository": {

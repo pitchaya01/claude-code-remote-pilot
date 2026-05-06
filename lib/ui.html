@@ -310,6 +310,85 @@ function statusLabel(s) {
   return s === 'needs-response' ? 'needs input' : s;
 }
 
+/* --- ANSI → HTML renderer --- */
+function ansiToHtml(raw) {
+  // Strip cursor-movement / other non-SGR sequences
+  const text = raw
+    .replace(/\x1b\[[0-9;]*[ABCDEFGHJKSTfunsu]/g, '')
+    .replace(/\x1b[()][AB012]/g, '')
+    .replace(/\x1b[=<>]/g, '');
+
+  const PALETTE = [
+    '#1a1a1a','#cc3333','#4e9a06','#c4a000','#3465a4','#75507b','#06989a','#d3d7cf',
+    '#7f7f7f','#ef2929','#8ae234','#fce94f','#729fcf','#ad7fa8','#34e2e2','#eeeeec',
+  ];
+  function p256(n) {
+    if (n < 16) return PALETTE[n];
+    if (n >= 232) { const v = 8 + (n - 232) * 10; return `rgb(${v},${v},${v})`; }
+    const i = n - 16, r = Math.floor(i/36)*51, g = Math.floor((i%36)/6)*51, b = (i%6)*51;
+    return `rgb(${r},${g},${b})`;
+  }
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  let result = '', last = 0, attrs = {}, spanOpen = false;
+  function styleStr() {
+    const p = [];
+    if (attrs.fg) p.push(`color:${attrs.fg}`);
+    if (attrs.bg) p.push(`background:${attrs.bg}`);
+    if (attrs.bold) p.push('font-weight:700');
+    if (attrs.dim) p.push('opacity:0.55');
+    if (attrs.italic) p.push('font-style:italic');
+    if (attrs.ul) p.push('text-decoration:underline');
+    return p.join(';');
+  }
+  function emitText(txt) {
+    if (!txt) return;
+    const s = styleStr();
+    if (s) { if (spanOpen) result += '</span>'; result += `<span style="${s}">`; spanOpen = true; }
+    else if (spanOpen) { result += '</span>'; spanOpen = false; }
+    result += esc(txt);
+  }
+
+  const SGR = /\x1b\[([0-9;]*)m/g;
+  let m;
+  SGR.lastIndex = 0;
+  while ((m = SGR.exec(text)) !== null) {
+    emitText(text.slice(last, m.index));
+    last = m.index + m[0].length;
+    const codes = m[1] ? m[1].split(';').map(Number) : [0];
+    let i = 0;
+    while (i < codes.length) {
+      const c = codes[i];
+      if (c === 0) { attrs = {}; }
+      else if (c === 1) { attrs.bold = true; }
+      else if (c === 2) { attrs.dim = true; }
+      else if (c === 3) { attrs.italic = true; }
+      else if (c === 4) { attrs.ul = true; }
+      else if (c === 22) { delete attrs.bold; delete attrs.dim; }
+      else if (c === 23) { delete attrs.italic; }
+      else if (c === 24) { delete attrs.ul; }
+      else if (c >= 30 && c <= 37) { attrs.fg = PALETTE[c-30]; }
+      else if (c === 38) {
+        if (codes[i+1] === 2 && i+4 < codes.length) { attrs.fg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`; i+=4; }
+        else if (codes[i+1] === 5 && i+2 < codes.length) { attrs.fg = p256(codes[i+2]); i+=2; }
+      }
+      else if (c === 39) { delete attrs.fg; }
+      else if (c >= 40 && c <= 47) { attrs.bg = PALETTE[c-40]; }
+      else if (c === 48) {
+        if (codes[i+1] === 2 && i+4 < codes.length) { attrs.bg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`; i+=4; }
+        else if (codes[i+1] === 5 && i+2 < codes.length) { attrs.bg = p256(codes[i+2]); i+=2; }
+      }
+      else if (c === 49) { delete attrs.bg; }
+      else if (c >= 90 && c <= 97)  { attrs.fg = PALETTE[c-82]; }
+      else if (c >= 100 && c <= 107) { attrs.bg = PALETTE[c-92]; }
+      i++;
+    }
+  }
+  emitText(text.slice(last));
+  if (spanOpen) result += '</span>';
+  return result;
+}
+
 /* --- Icons --- */
 const Icons = {
   dashboard: <svg className="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="10" y="2" width="6" height="6" rx="1"/><rect x="2" y="10" width="6" height="6" rx="1"/><rect x="10" y="10" width="6" height="6" rx="1"/></svg>,
@@ -400,7 +479,7 @@ function Sidebar({ currentScreen, onNavigate, sessionCount, open, onClose, conne
             <div className="logo-mark">C</div>
             <span className="logo-text">Code Pilot</span>
           </a>
-          <span className="logo-badge">v0.4.5</span>
+          <span className="logo-badge">v0.5.0</span>
           <button className="sidebar-close" onClick={onClose}>{Icons.close}</button>
         </div>
         <nav className="sidebar-nav">
@@ -488,6 +567,8 @@ function DashboardScreen({ onNavigate, sessions, activity, serverStatus }) {
           </div>
         </div>
       )}
+
+      <BroadcastBar activeSessions={active.length} />
     </div>
   );
 }
@@ -621,14 +702,17 @@ function SessionDetailScreen({ session, onBack, onKilled }) {
             <StatusPill status={session.status} />
           </div>
 
-          <div className="terminal-body" ref={terminalRef}>
-            {isOffline
-              ? <span style={{ color: 'oklch(50% 0.018 50)' }}>Session is offline — no output available.</span>
-              : output
-                ? <>{output}<span style={{ opacity: 0.4 }}>▊</span></>
-                : <span style={{ color: 'oklch(50% 0.018 50)' }}>Connecting…</span>
-            }
-          </div>
+          <div
+            className="terminal-body"
+            ref={terminalRef}
+            dangerouslySetInnerHTML={{ __html:
+              isOffline
+                ? '<span style="color:oklch(50% 0.018 50)">Session is offline — no output available.</span>'
+                : output
+                  ? ansiToHtml(output) + '<span style="opacity:0.4">▊</span>'
+                  : '<span style="color:oklch(50% 0.018 50)">Connecting…</span>'
+            }}
+          />
 
           {!isOffline && (
             <div className="terminal-footer">
@@ -765,6 +849,56 @@ function SessionsScreen({ sessions, onNavigate }) {
   );
 }
 
+/* --- Broadcast Bar --- */
+function BroadcastBar({ activeSessions }) {
+  const [msg, setMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const broadcast = async () => {
+    if (!msg.trim() || sending) return;
+    setSending(true);
+    try {
+      const res = await apiFetch('/api/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResult(`Sent to ${data.sent} session${data.sent !== 1 ? 's' : ''}`);
+        setMsg('');
+        setTimeout(() => setResult(null), 3000);
+      }
+    } catch {}
+    finally { setSending(false); }
+  };
+
+  if (activeSessions === 0) return null;
+
+  return (
+    <div className="card" style={{ padding: '14px 18px', marginTop: 24 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: 10 }}>
+        Broadcast to all {activeSessions} active session{activeSessions !== 1 ? 's' : ''}
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          className="form-input"
+          placeholder="Send the same message to every active session…"
+          value={msg}
+          onChange={e => setMsg(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && broadcast()}
+          style={{ flex: 1 }}
+        />
+        <button className="btn btn-primary btn-sm" onClick={broadcast} disabled={sending || !msg.trim()}>
+          {sending ? 'Sending…' : 'Send'}
+        </button>
+      </div>
+      {result && <div style={{ fontSize: 12, color: 'var(--success)', marginTop: 8 }}>{result}</div>}
+    </div>
+  );
+}
+
 /* --- App --- */
 function App() {
   const savedTheme = storage.getItem('ccp-theme');
@@ -791,6 +925,13 @@ function App() {
     return () => { _onUnauth = () => {}; };
   }, []);
 
+  // Request browser notification permission on first load
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const connectSSE = useCallback(() => {
     if (esRef.current) esRef.current.close();
     const es = new EventSource(sseUrl());
@@ -808,8 +949,16 @@ function App() {
       const prev = prevStatusRef.current;
       const newEntries = [];
       for (const s of incoming) {
-        if (prev[s.name] && prev[s.name] !== s.status)
+        if (prev[s.name] && prev[s.name] !== s.status) {
           newEntries.push({ time: now, name: s.name, from: prev[s.name], to: s.status });
+          if ((s.status === 'needs-response' || s.status === 'limit') &&
+              'Notification' in window && Notification.permission === 'granted') {
+            new Notification(`Claude Pilot — ${s.name}`, {
+              body: s.status === 'needs-response' ? 'Claude needs your input' : 'Usage limit hit — will auto-resume',
+              tag: `ccp-${s.name}-${s.status}`,
+            });
+          }
+        }
         prev[s.name] = s.status;
       }
       if (newEntries.length) setActivity(a => [...newEntries, ...a].slice(0, 20));

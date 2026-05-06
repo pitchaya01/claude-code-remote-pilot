@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — 2026-05-06
+
+### Added
+- **ANSI color rendering**: terminal output in the web dashboard now renders full 24-bit color, bold, dim, italic, and underline — same colors you see in the real tmux terminal. Server-side: `capture-pane` now uses `-e` flag and sends raw ANSI codes. Client-side: inline `ansiToHtml()` parser handles `38;2;R;G;B` / `48;2;R;G;B` (24-bit), `38;5;N` / `48;5;N` (256-color), and all standard SGR attributes.
+- **Browser notifications**: the dashboard requests notification permission on first load. When any session transitions to `needs-response` or `limit`, a desktop notification fires (uses `tag` deduplication so the same session doesn't spam).
+- **Broadcast message**: a "Broadcast" bar appears on the Dashboard when there are active sessions. Type a message and press Enter (or click Send) to send the same text to every active session at once. The server sends it via `POST /api/broadcast`.
+
+---
+
 ## 0.4.9 — 2026-05-06
 
 ### Added

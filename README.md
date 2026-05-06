@@ -123,11 +123,13 @@ claude-pilot> web
 
 The dashboard shows all sessions (live and offline), lets you:
 
-- View terminal output for each session (auto-refreshes every 2 seconds)
-- Send a message to Claude directly from the browser
+- View terminal output with **full ANSI color rendering** (24-bit color, bold, dim, italic) — looks like the real terminal
+- Send a message to Claude directly from the browser (or press Esc / ^C / ^D)
+- **Broadcast** a message to all active sessions at once
 - Spawn new sessions with a name, path, and optional initial prompt
 - Kill sessions
 - See a live activity log of status transitions
+- Receive **browser desktop notifications** when any session needs input or hits a usage limit
 
 By default the server binds to `127.0.0.1` — local only. To access from other devices on your network:
 
@@ -204,8 +206,12 @@ Start Claude without `--dangerously-skip-permissions` unless you know what you'r
 - [x] multi-session support
 - [x] web dashboard — `web [port]` command, React SPA, SSE live updates
 - [x] persistent session history with offline session display
+- [x] ANSI color terminal rendering in browser
+- [x] browser desktop notifications on status changes
+- [x] broadcast message to all sessions
+- [x] auto-discover untracked tmux sessions on startup
+- [ ] auto-yes rules — confirm prompts automatically by pattern
 - [ ] pluggable notification providers
-- [ ] safety / policy engine
 
 ---
 
