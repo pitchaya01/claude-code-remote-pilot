@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — 2026-05-06
+
+### Changed
+- Status check interval reduced from 30s → 5s (faster running/idle/limit detection)
+- Watch screen refresh rate reduced from 2s → 1s
+
+---
+
 ## 0.3.0 — 2026-05-06
 
 ### Added

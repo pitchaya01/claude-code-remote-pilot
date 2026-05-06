@@ -187,7 +187,7 @@ function startWatch(manager, rl) {
   }
 
   function startTimer() {
-    timer.id = setInterval(draw, 2000);
+    timer.id = setInterval(draw, 1000);
   }
 
   function stopTimer() {
