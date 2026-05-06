@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.3 — 2026-05-06
+
+### Fixed
+- **Web UI respawn completed**: offline session respawn now has loading/error feedback and immediately updates session detail state after success.
+
+---
+
 ## 0.5.2 — 2026-05-06
 
 ### Fixed

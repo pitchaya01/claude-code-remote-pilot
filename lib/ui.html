@@ -574,11 +574,13 @@ function DashboardScreen({ onNavigate, sessions, activity, serverStatus }) {
 }
 
 /* --- Session Detail --- */
-function SessionDetailScreen({ session, onBack, onKilled }) {
+function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   const [output, setOutput] = useState('');
   const [msg, setMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [killing, setKilling] = useState(false);
+  const [respawning, setRespawning] = useState(false);
+  const [respawnError, setRespawnError] = useState('');
   const [copyOk, setCopyOk] = useState(false);
   const terminalRef = useRef(null);
   const inputRef = useRef(null);
@@ -661,14 +663,21 @@ function SessionDetailScreen({ session, onBack, onKilled }) {
   };
 
   const handleRespawn = async () => {
+    if (respawning) return;
+    setRespawning(true);
+    setRespawnError('');
     try {
       const res = await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/respawn`, { method: 'POST' });
+      const data = await res.json();
       if (!res.ok) {
-        const d = await res.json();
-        alert(d.error || 'Failed to respawn');
+        setRespawnError(data.error || 'Failed to respawn');
+        return;
       }
+      onRespawned(data);
     } catch (e) {
-      if (e.message !== 'Unauthorized') alert('Network error');
+      if (e.message !== 'Unauthorized') setRespawnError('Network error');
+    } finally {
+      setRespawning(false);
     }
   };
 
@@ -700,9 +709,16 @@ function SessionDetailScreen({ session, onBack, onKilled }) {
         </div>
         <div className="detail-actions">
           {isOffline && (
-            <button className="btn btn-sm btn-primary" onClick={handleRespawn}>
-              ↺ Respawn
-            </button>
+            <>
+              <button className="btn btn-sm btn-primary" onClick={handleRespawn} disabled={respawning}>
+                {respawning ? 'Respawning…' : '↺ Respawn'}
+              </button>
+              {respawnError && (
+                <span style={{ color: 'var(--error)', fontSize: 12, alignSelf: 'center' }}>
+                  {respawnError}
+                </span>
+              )}
+            </>
           )}
           {!isOffline && (
             <button className="btn btn-sm" onClick={copyAttachCmd} title={`tmux attach -t ${session.name}`}>
@@ -1047,7 +1063,13 @@ function App() {
       case 'dashboard': return <DashboardScreen onNavigate={navigate} sessions={sessions} activity={activity} serverStatus={serverStatus} />;
       case 'sessions':  return <SessionsScreen sessions={sessions} onNavigate={navigate} />;
       case 'create':    return <CreateSessionScreen onBack={() => navigate('dashboard')} onCreated={s => navigate('detail', s)} />;
-      case 'detail':    return <SessionDetailScreen session={selectedSession} onBack={() => navigate('dashboard')} onKilled={() => navigate('sessions')} />;
+      case 'detail':    return <SessionDetailScreen session={selectedSession} onBack={() => navigate('dashboard')} onKilled={() => navigate('sessions')} onRespawned={(respawned) => {
+        setSessions(prev => {
+          const next = prev.filter(s => s.name !== respawned.name);
+          return [{ ...respawned, id: respawned.name }, ...next];
+        });
+        setSelectedSession({ ...respawned, id: respawned.name });
+      }} />;
       default:          return <DashboardScreen onNavigate={navigate} sessions={sessions} activity={activity} serverStatus={serverStatus} />;
     }
   };
