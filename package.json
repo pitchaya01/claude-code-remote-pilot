@@ -1,0 +1,33 @@
+{
+  "name": "claude-code-pilot",
+  "version": "0.1.0",
+  "description": "Interactive Claude Code supervisor with tmux, Telegram notifications, and auto-resume after usage limits.",
+  "type": "commonjs",
+  "bin": {
+    "claude-pilot": "bin/claude-pilot.js"
+  },
+  "files": [
+    "bin/",
+    "claude-pilot.sh",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node bin/claude-pilot.js",
+    "pilot": "node bin/claude-pilot.js",
+    "check": "node bin/claude-pilot.js --help"
+  },
+  "keywords": [
+    "claude-code",
+    "claude",
+    "tmux",
+    "telegram",
+    "agent",
+    "auto-resume"
+  ],
+  "author": "mekku",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
