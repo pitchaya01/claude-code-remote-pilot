@@ -539,7 +539,8 @@ function SessionDetailScreen({ session, onBack, onKilled }) {
     } catch {
     } finally {
       setSending(false);
-      inputRef.current?.focus();
+      // Defer focus until after React re-enables the input (disabled={sending})
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
@@ -551,7 +552,7 @@ function SessionDetailScreen({ session, onBack, onKilled }) {
         body: JSON.stringify({ key }),
       });
     } catch {}
-    inputRef.current?.focus();
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const handleKeyDown = (e) => {
