@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.3 — 2026-05-06
+
+### Added
+- `web [port] [host]` — web dashboard now accepts an optional bind host.
+  - `web` → `127.0.0.1:3742` (local only, default)
+  - `web 3742 0.0.0.0` → bind to all interfaces (accessible from other devices on the network)
+  - `web 8080 192.168.1.10` → bind to a specific interface
+
+---
+
 ## 0.4.2 — 2026-05-06
 
 ### Fixed

@@ -319,7 +319,7 @@ const HELP = `
   spawn <path> [name]   Start Claude at path (name defaults to dir name)
   list                  Show all sessions
   watch                 Live session monitor  (q to exit)
-  web [port]            Start web dashboard  (default port 3742)
+  web [port] [host]     Start web dashboard  (default: 3742 127.0.0.1)
   attach <name>         Open tmux session in this terminal
   kill <name>           Stop a session
   resume [message]      Show or set the message sent after a limit resets
@@ -432,15 +432,16 @@ ${HELP}`);
         }
         case 'web': {
           const port = parseInt(args[0]) || 3742;
+          const host = args[1] || '127.0.0.1';
           let webServer = manager._webServer;
           if (webServer) {
-            console.log(`  Web dashboard already running at http://127.0.0.1:${webServer.port}`);
+            console.log(`  Web dashboard already running at http://${webServer.host}:${webServer.port}`);
             break;
           }
-          webServer = new WebServer(manager, port);
+          webServer = new WebServer(manager, port, host);
           manager._webServer = webServer;
           webServer.start();
-          const url = `http://127.0.0.1:${port}`;
+          const url = `http://${host}:${port}`;
           console.log(`  ✓ Web dashboard started at ${url}`);
           const opener = process.platform === 'darwin' ? 'open' : 'xdg-open';
           spawn(opener, [url], { stdio: 'ignore', detached: true }).unref();

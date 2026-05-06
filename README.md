@@ -104,7 +104,7 @@ sudo apt update && sudo apt install tmux
 | `spawn <path> [name]` | Start Claude at a path. Name defaults to the directory name. |
 | `list` | One-shot status of all sessions. |
 | `watch` | Live dashboard with offline session history. Press a number to select, `q` to exit. |
-| `web [port]` | Start the web dashboard at `http://127.0.0.1:3742` (or given port). Opens browser automatically. |
+| `web [port] [host]` | Start the web dashboard. Defaults to `127.0.0.1:3742`. Use `0.0.0.0` to expose on the network. |
 | `attach <name>` | Open a tmux session in the current terminal. |
 | `kill <name>` | Stop a session. |
 | `help` | Show command reference. |
@@ -129,7 +129,14 @@ The dashboard shows all sessions (live and offline), lets you:
 - Kill sessions
 - See a live activity log of status transitions
 
-The server binds to `127.0.0.1` only — not reachable from other machines. Use `web <port>` to use a custom port.
+By default the server binds to `127.0.0.1` — local only. To access from other devices on your network:
+
+```
+claude-pilot> web 3742 0.0.0.0
+  ✓ Web dashboard started at http://0.0.0.0:3742
+```
+
+You can also bind to a specific interface IP: `web 3742 192.168.1.10`.
 
 ---
 
