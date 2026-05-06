@@ -6,6 +6,7 @@
 - **Respawn loading no longer appears stuck**: web respawn now has a request timeout and surfaces a clear timeout error when the API call hangs, so the button always returns to clickable state.
 - **Terminal output now feels realtime**: session detail terminal polling runs at a faster cadence and triggers immediate output refresh after sending input/keys, improving perceived connect speed and responsiveness.
 - **"Connecting…" no longer gets stuck**: terminal detail view now clears connecting state on poll failures, shows a retrying error hint, and fixes session state initialization order for stable render behavior.
+- **Respawn/End web actions stabilized**: removed false-positive client respawn timeout and added explicit inline error handling for End action responses, so both controls fail visibly instead of appearing stuck.
 
 ## 0.5.4 — 2026-05-06
 

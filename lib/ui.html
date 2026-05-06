@@ -580,6 +580,7 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   const [msg, setMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [killing, setKilling] = useState(false);
+  const [killError, setKillError] = useState('');
   const [respawning, setRespawning] = useState(false);
   const [respawnError, setRespawnError] = useState('');
   const [copyOk, setCopyOk] = useState(false);
@@ -688,10 +689,18 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   const handleKill = async () => {
     if (!confirm(`End session "${session.name}"?`)) return;
     setKilling(true);
+    setKillError('');
     try {
-      await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setKillError(d.error || 'Failed to end session');
+        setKilling(false);
+        return;
+      }
       onKilled();
-    } catch {
+    } catch (e) {
+      if (e && e.message !== 'Unauthorized') setKillError('Network error');
       setKilling(false);
     }
   };
@@ -700,13 +709,8 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
     if (respawning) return;
     setRespawning(true);
     setRespawnError('');
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
     try {
-      const res = await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/respawn`, {
-        method: 'POST',
-        signal: controller.signal,
-      });
+      const res = await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/respawn`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
         setRespawnError(data.error || 'Failed to respawn');
@@ -714,13 +718,8 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
       }
       onRespawned(data);
     } catch (e) {
-      if (e && e.name === 'AbortError') {
-        setRespawnError('Respawn timeout. Please try again.');
-        return;
-      }
       if (e.message !== 'Unauthorized') setRespawnError('Network error');
     } finally {
-      clearTimeout(timeoutId);
       setRespawning(false);
     }
   };
@@ -773,6 +772,11 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
             <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={handleKill} disabled={killing}>
               {Icons.trash} {killing ? 'Ending…' : 'End'}
             </button>
+          )}
+          {!isOffline && killError && (
+            <span style={{ color: 'var(--error)', fontSize: 12, alignSelf: 'center' }}>
+              {killError}
+            </span>
           )}
         </div>
       </div>
