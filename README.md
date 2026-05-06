@@ -6,6 +6,8 @@ A small self-hosted helper tool for people who run long Claude Code sessions and
 
 Originally built just for personal use… then it slowly grew 😅
 
+![Dashboard screenshot](docs/screenshot-dashboard.png)
+
 ---
 
 ## Why?
