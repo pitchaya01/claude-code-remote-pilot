@@ -547,6 +547,11 @@ function DashboardScreen({ onNavigate, sessions, activity, serverStatus }) {
                 <div className="session-card-field"><div className="session-card-field-label">Started</div><div className="session-card-field-value">{relativeTime(s.startedAt)}</div></div>
                 <div className="session-card-field"><div className="session-card-field-label">Tokens</div><div className="session-card-field-value">{formatTokens(s.tokens)}</div></div>
               </div>
+              {(s.queueLength > 0 || s.autoFeed) && (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {s.autoFeed ? '⚡' : '⏳'} {s.queueLength} message{s.queueLength !== 1 ? 's' : ''} queued{s.autoFeed ? ' · auto-feed' : ''}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -847,6 +852,8 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
           </div>
         </div>
       </div>
+
+      <QueuePanel session={session} />
     </div>
   );
 }
@@ -1011,6 +1018,151 @@ function BroadcastBar({ activeSessions }) {
         </button>
       </div>
       {result && <div style={{ fontSize: 12, color: 'var(--success)', marginTop: 8 }}>{result}</div>}
+    </div>
+  );
+}
+
+/* --- Queue Panel --- */
+function QueuePanel({ session }) {
+  const isOffline = session.status === 'offline';
+  const [items, setItems] = useState([]);
+  const [autoFeed, setAutoFeed] = useState(false);
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = () => {
+      apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/queue`, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => { if (mounted) { setItems(d.items || []); setAutoFeed(!!d.autoFeed); } })
+        .catch(() => {});
+    };
+    load();
+    const t = setInterval(load, 3000);
+    return () => { mounted = false; clearInterval(t); };
+  }, [session.name]);
+
+  const enqueue = async () => {
+    const msg = input.trim();
+    if (!msg || busy) return;
+    setBusy(true);
+    try {
+      const res = await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/queue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg }),
+      });
+      const data = await res.json();
+      if (res.ok) { setItems(prev => [...prev, data.item]); setInput(''); }
+    } finally {
+      setBusy(false);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  };
+
+  const play = async () => {
+    if (busy || !items.length || isOffline) return;
+    setBusy(true);
+    try {
+      await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/queue/play`, { method: 'POST' });
+      setItems(prev => prev.slice(1));
+    } finally { setBusy(false); }
+  };
+
+  const remove = async (id) => {
+    setItems(prev => prev.filter(it => it.id !== id));
+    apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/queue/${id}`, { method: 'DELETE' }).catch(() => {});
+  };
+
+  const toggleAutoFeed = async () => {
+    if (isOffline) return;
+    const next = !autoFeed;
+    setAutoFeed(next);
+    apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/queue`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ autoFeed: next }),
+    }).catch(() => setAutoFeed(!next));
+  };
+
+  return (
+    <div className="card" style={{ padding: '14px 18px', marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          Queue
+          {items.length > 0 && (
+            <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: 11, padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>
+              {items.length}
+            </span>
+          )}
+        </span>
+        <button
+          onClick={toggleAutoFeed}
+          disabled={isOffline}
+          title={isOffline ? 'Start session to enable auto-feed' : autoFeed ? 'Auto-feed: sends next message when session goes idle' : 'Enable auto-feed'}
+          style={{
+            marginLeft: 'auto', fontSize: 11, padding: '3px 8px', borderRadius: 6, cursor: isOffline ? 'not-allowed' : 'pointer', fontWeight: 600,
+            border: `1px solid ${autoFeed && !isOffline ? 'var(--success)' : 'var(--border)'}`,
+            background: autoFeed && !isOffline ? 'var(--success-soft)' : 'var(--bg)',
+            color: autoFeed && !isOffline ? 'var(--success)' : 'var(--muted)',
+            opacity: isOffline ? 0.5 : 1,
+          }}
+        >
+          {autoFeed && !isOffline ? '⚡ Auto-feed on' : 'Auto-feed off'}
+        </button>
+      </div>
+
+      {items.length === 0 && (
+        <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', padding: '8px 0 12px' }}>No messages queued</div>
+      )}
+
+      {items.length > 0 && (
+        <div style={{ marginBottom: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+          {items.map((item, i) => (
+            <div key={item.id} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+              background: i === 0 ? 'var(--accent-soft)' : 'transparent',
+              borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
+            }}>
+              {i === 0 ? (
+                <button
+                  onClick={play}
+                  disabled={busy || isOffline}
+                  title={isOffline ? 'Session offline' : 'Send now'}
+                  style={{ background: 'none', border: 'none', cursor: busy || isOffline ? 'not-allowed' : 'pointer', color: isOffline ? 'var(--muted)' : 'var(--success)', fontSize: 13, padding: 0, flexShrink: 0, opacity: isOffline ? 0.4 : 1 }}
+                >▶</button>
+              ) : (
+                <span style={{ width: 16, flexShrink: 0, textAlign: 'center', fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>{i + 1}</span>
+              )}
+              <span style={{ flex: 1, fontSize: 12, fontFamily: 'var(--font-mono)', color: i === 0 ? 'var(--fg)' : 'var(--fg-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.message}
+              </span>
+              <button
+                onClick={() => remove(item.id)}
+                title="Remove"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 13, padding: 0, flexShrink: 0, lineHeight: 1 }}
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          ref={inputRef}
+          className="form-input"
+          placeholder="Type a message to queue…"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && enqueue()}
+          style={{ flex: 1, fontSize: 12 }}
+        />
+        <button className="btn btn-sm btn-primary" onClick={enqueue} disabled={busy || !input.trim()}>
+          + Enqueue
+        </button>
+      </div>
     </div>
   );
 }
