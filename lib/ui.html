@@ -631,7 +631,7 @@ function SessionCard({ session, onNavigate }) {
       </div>
 
       {session.snippet && !isOffline && (
-        <div style={{ margin: '8px 0 0', padding: '5px 8px', background: 'oklch(14% 0.015 50)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'oklch(65% 0.015 70)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ margin: '8px 0 0', padding: '5px 8px', background: 'oklch(14% 0.015 50)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'oklch(65% 0.015 70)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.5 }}>
           {session.snippet}
         </div>
       )}
