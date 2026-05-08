@@ -1269,7 +1269,7 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
           <div
             className="terminal-body"
             ref={terminalRef}
-            onClick={() => inputRef.current?.focus()}
+            onClick={() => { if (!window.getSelection()?.toString()) inputRef.current?.focus(); }}
             style={{ cursor: isOffline ? 'default' : 'text' }}
             dangerouslySetInnerHTML={{ __html:
               isOffline
