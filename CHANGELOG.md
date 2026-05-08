@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.4 — 2026-05-08
+
+### Fixed
+- **Status pill disappearing from session cards**: long session names pushed the pill off the card. Added `flex:1;min-width:0` to the name/path container so it shrinks instead of overflowing, and `flex-shrink:0` to `.status-pill` so it's always visible. Session name now also truncates with ellipsis.
+
+---
+
 ## 0.7.3 — 2026-05-08
 
 ### Fixed

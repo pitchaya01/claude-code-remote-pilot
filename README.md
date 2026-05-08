@@ -480,6 +480,7 @@ When using the tunnel feature, always set a password. Anyone with the URL can co
 - [x] Telegram notifications include tap-to-open dashboard URL (LAN → tunnel upgrade)
 - [x] mobile UX — section controls stack vertically, 44px CTA touch targets, scrollable footer keys
 - [x] mobile card width fix — `min-width:0` on grid items + `overflow-x:hidden` on content area
+- [x] status pill always visible — `flex-shrink:0` on pill, `flex:1;min-width:0` on name container
 - [ ] smarter retry logic
 - [ ] usage statistics and session timeline
 - [ ] pluggable notification providers

@@ -116,7 +116,7 @@
   .session-card-field-label{color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
   .session-card-field-value{font-family:var(--font-mono);font-size:12px;color:var(--fg-secondary);}
 
-  .status-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;font-family:var(--font-mono);letter-spacing:0.02em;}
+  .status-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;font-family:var(--font-mono);letter-spacing:0.02em;flex-shrink:0;}
   .status-dot{width:6px;height:6px;border-radius:50%;}
   .status-running{background:var(--success-soft);color:var(--success);}
   .status-running .status-dot{background:var(--success);}
@@ -713,9 +713,9 @@ function SessionCard({ session, onNavigate, snippetLines }) {
       onClick={() => onNavigate('detail', session)}
     >
       <div className="session-card-header">
-        <div>
-          <div className="session-card-name">{session.emoji ? <span style={{ marginRight: 5 }}>{session.emoji}</span> : null}{session.name}</div>
-          <div className="session-card-meta" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{session.path}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div className="session-card-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.emoji ? <span style={{ marginRight: 5 }}>{session.emoji}</span> : null}{session.name}</div>
+          <div className="session-card-meta" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.path}</div>
         </div>
         <StatusPill status={session.status} />
       </div>
