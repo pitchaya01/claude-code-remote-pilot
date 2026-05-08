@@ -36,3 +36,13 @@
 - [x] test/config.test.js: 14 unit tests for all config functions
 - [x] test/webserver.test.js: 20 HTTP integration tests (auth, queue CRUD, auto-feed, meta)
 - [x] package.json: added "test" script (node --test)
+
+## Completed (terminal UX + auto-yes)
+- [x] ui.html: command history — ↑/↓ recalls sent messages when input has text
+- [x] ui.html: ↑/↓ forward to tmux when input is empty (navigate Claude menus)
+- [x] ui.html: Tab key forwarded to tmux (tab-completion / cycle options)
+- [x] ui.html: Ctrl+C / Ctrl+D send to tmux when input is empty
+- [x] ui.html: Ctrl+U clears the input line; Ctrl+L sends clear-screen to tmux
+- [x] ui.html: clicking the terminal body focuses the input
+- [x] ui.html: Auto-yes toggle — presses Enter automatically when Claude shows a permission prompt
+- [x] ui.html: ↑ ↓ ⇥ buttons added to terminal footer

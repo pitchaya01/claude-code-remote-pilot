@@ -632,6 +632,9 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   const terminalRef = useRef(null);
   const inputRef = useRef(null);
   const pollNowRef = useRef(() => {});
+  const cmdHistoryRef = useRef([]);
+  const historyIdxRef = useRef(-1);
+  const [autoYes, setAutoYes] = useState(false);
 
   const copyAttachCmd = () => {
     const cmd = `tmux attach -t ${session.name}`;
@@ -708,8 +711,25 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
     if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
   }, [output]);
 
+  // Auto-yes: press Enter automatically when Claude needs a response (confirms option 1 in permission menus)
+  useEffect(() => {
+    if (!autoYes || isOffline || session.status !== 'needs-response') return;
+    const t = setTimeout(async () => {
+      try {
+        await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'Enter' }),
+        });
+        pollNowRef.current();
+      } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [autoYes, session.status, session.name, isOffline]);
+
   const sendMessage = async () => {
     if (!msg.trim() || sending || isOffline) return;
+    const text = msg.trim();
     setSending(true);
     try {
       await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/send`, {
@@ -717,12 +737,13 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg }),
       });
+      cmdHistoryRef.current = [text, ...cmdHistoryRef.current].slice(0, 100);
+      historyIdxRef.current = -1;
       setMsg('');
       pollNowRef.current();
     } catch {
     } finally {
       setSending(false);
-      // Defer focus until after React re-enables the input (disabled={sending})
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
@@ -740,7 +761,35 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); return; }
+    // Arrow keys: forward to tmux when input is empty (navigate Claude menus),
+    // navigate command history when there's text in the input.
+    if (e.key === 'ArrowUp') {
+      if (!msg) { e.preventDefault(); sendKey('Up'); return; }
+      e.preventDefault();
+      const hist = cmdHistoryRef.current;
+      if (!hist.length) return;
+      const next = Math.min(historyIdxRef.current + 1, hist.length - 1);
+      historyIdxRef.current = next;
+      setMsg(hist[next] || '');
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      if (!msg) { e.preventDefault(); sendKey('Down'); return; }
+      e.preventDefault();
+      const next = Math.max(historyIdxRef.current - 1, -1);
+      historyIdxRef.current = next;
+      setMsg(next === -1 ? '' : cmdHistoryRef.current[next] || '');
+      return;
+    }
+    if (e.key === 'Tab') { e.preventDefault(); sendKey('Tab'); return; }
+    // Ctrl+C / Ctrl+D only when input is empty — otherwise let the browser handle selection etc.
+    if (e.ctrlKey && e.key === 'c' && !msg) { e.preventDefault(); sendKey('C-c'); return; }
+    if (e.ctrlKey && e.key === 'd' && !msg) { e.preventDefault(); sendKey('C-d'); return; }
+    // Ctrl+U: clear current line (readline convention)
+    if (e.ctrlKey && e.key === 'u') { e.preventDefault(); setMsg(''); historyIdxRef.current = -1; return; }
+    // Ctrl+L: clear screen
+    if (e.ctrlKey && e.key === 'l') { e.preventDefault(); sendKey('C-l'); return; }
   };
 
   const handleKill = async () => {
@@ -821,6 +870,16 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
             </>
           )}
           {!isOffline && (
+            <button
+              className="btn btn-sm"
+              onClick={() => setAutoYes(a => !a)}
+              title="Auto-yes: automatically press Enter when Claude shows a permission prompt"
+              style={autoYes ? { background: 'var(--success-soft)', color: 'var(--success)', borderColor: 'var(--success)' } : {}}
+            >
+              {autoYes ? '⚡ Auto-yes' : 'Auto-yes'}
+            </button>
+          )}
+          {!isOffline && (
             <button className="btn btn-sm" onClick={copyAttachCmd} title={`tmux attach -t ${session.name}`}>
               {copyOk ? '✓ Copied' : '⊞ New Terminal'}
             </button>
@@ -854,6 +913,8 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
           <div
             className="terminal-body"
             ref={terminalRef}
+            onClick={() => inputRef.current?.focus()}
+            style={{ cursor: isOffline ? 'default' : 'text' }}
             dangerouslySetInnerHTML={{ __html:
               isOffline
                 ? '<span style="color:oklch(50% 0.018 50)">Session is offline — no output available.</span>'
@@ -882,10 +943,13 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
                 autoComplete="off"
                 autoCorrect="off"
               />
-              <button className="btn-key" onClick={() => sendKey('Escape')} title="Send Escape">Esc</button>
-              <button className="btn-key" onClick={() => sendKey('Enter')} title="Send Enter">↵</button>
-              <button className="btn-key" onClick={() => sendKey('C-c')} title="Send Ctrl+C">^C</button>
-              <button className="btn-key" onClick={() => sendKey('C-d')} title="Send Ctrl+D">^D</button>
+              <button className="btn-key" onClick={() => sendKey('Up')} title="Arrow Up — navigate Claude menus (or use ↑ in empty input)">↑</button>
+              <button className="btn-key" onClick={() => sendKey('Down')} title="Arrow Down — navigate Claude menus">↓</button>
+              <button className="btn-key" onClick={() => sendKey('Tab')} title="Tab — complete / cycle options">⇥</button>
+              <button className="btn-key" onClick={() => sendKey('Escape')} title="Escape">Esc</button>
+              <button className="btn-key" onClick={() => sendKey('Enter')} title="Enter">↵</button>
+              <button className="btn-key" onClick={() => sendKey('C-c')} title="Ctrl+C — interrupt (or press Ctrl+C in empty input)">^C</button>
+              <button className="btn-key" onClick={() => sendKey('C-d')} title="Ctrl+D — EOF / exit (or press Ctrl+D in empty input)">^D</button>
             </div>
           )}
         </div>
