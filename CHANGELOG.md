@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1 — 2026-05-08
+
+### Changed
+- **Dashboard snippet**: shows up to 4 meaningful lines of terminal output (was 1). Separator lines (`─`, `━`, `═`, `-`, box-drawing chars) and blank lines are filtered out.
+- **Menu CTA layout**: each choice is now a full-width row instead of wrapping inline chips. Long labels are truncated with `…`; hover reveals the full text via tooltip.
+
+---
+
 ## 0.6.0 — 2026-05-08
 
 ### Added
