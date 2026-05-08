@@ -1104,7 +1104,8 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); return; }
+    if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); sendKey('Enter'); return; }
+    if (e.key === 'Enter') { e.preventDefault(); if (!msg.trim()) sendKey('Enter'); else sendMessage(); return; }
     // Arrow keys: forward to tmux when input is empty (navigate Claude menus),
     // navigate command history when there's text in the input.
     if (e.key === 'ArrowUp') {
