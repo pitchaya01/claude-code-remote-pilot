@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.8 — 2026-05-08
+
+### Changed
+- **Buy Me a Coffee button**: moved to the top header (next to dark mode toggle on desktop; ☕ icon-only on mobile). Removed from sidebar footer.
+- **Version badge**: sidebar `v__CCP_VERSION__` placeholder is now replaced with the real version from `package.json` at serve time — no more stale `v0.5.0`.
+
+---
+
 ## 0.7.7 — 2026-05-08
 
 ### Fixed

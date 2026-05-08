@@ -547,7 +547,7 @@ function Sidebar({ currentScreen, onNavigate, sessionCount, open, onClose, conne
             <div className="logo-mark">C</div>
             <span className="logo-text">Code Pilot</span>
           </a>
-          <span className="logo-badge">v0.5.0</span>
+          <span className="logo-badge">v__CCP_VERSION__</span>
           <button className="sidebar-close" onClick={onClose}>{Icons.close}</button>
         </div>
         <nav className="sidebar-nav">
@@ -567,10 +567,6 @@ function Sidebar({ currentScreen, onNavigate, sessionCount, open, onClose, conne
             <span className={`conn-dot ${connected ? '' : 'disconnected'}`} />
             {connected ? 'Connected' : 'Reconnecting…'}
           </div>
-          <a href="https://www.buymeacoffee.com/mekkunks" target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', margin: '4px 8px', borderRadius: 6, background: '#FFDD00', color: '#000', fontSize: 12, fontWeight: 600, textDecoration: 'none', justifyContent: 'center' }}>
-            ☕ Buy me a coffee
-          </a>
         </div>
       </aside>
     </>
@@ -1825,11 +1821,17 @@ function App() {
         <div className="mobile-header">
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>{Icons.menu}</button>
           <span className="mobile-title">{screenTitle}</span>
+          <a href="https://www.buymeacoffee.com/mekkunks" target="_blank" rel="noopener noreferrer" title="Buy me a coffee"
+            style={{ fontSize: 18, textDecoration: 'none', lineHeight: 1 }}>☕</a>
           <button className="theme-toggle" onClick={() => setDark(d => !d)}>{dark ? Icons.sun : Icons.moon}</button>
         </div>
         <header className="header">
           <h1 className="header-title">{screenTitle}</h1>
           <div className="header-spacer" />
+          <a href="https://www.buymeacoffee.com/mekkunks" target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: '#FFDD00', color: '#000', fontSize: 12, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            ☕ Buy me a coffee
+          </a>
           <button className="theme-toggle" onClick={() => setDark(d => !d)}>{dark ? Icons.sun : Icons.moon} {dark ? 'Light' : 'Dark'}</button>
         </header>
         <div className="content">{renderScreen()}</div>
