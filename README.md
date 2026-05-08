@@ -48,7 +48,12 @@ It's a practical helper tool for people who run Claude Code for extended periods
 
 **Web dashboard**
 - Full-color terminal output rendered in the browser (24-bit ANSI, bold, dim, italic)
-- Send messages, special keys (Esc, ^C, ^D, Enter), or broadcast to all sessions at once
+- Terminal input behaves like a real terminal — command history (↑/↓), Tab forwarding, Ctrl+C/D/U/L, click output to focus
+- Send messages or special keys; broadcast to all sessions at once
+- **Auto-yes mode** — toggle per session to automatically confirm Claude's permission prompts
+- **Menu choice detection** — when Claude shows a numbered menu (1 / 2 / 3), clickable buttons appear automatically; optional ollama fallback for non-standard output
+- **Dashboard quick-reply** — send a message to any session directly from the card without opening the terminal
+- **Snippet preview** — each card shows the last 4 lines of terminal output at a glance
 - Spawn, kill, or respawn sessions from the browser
 - Live status updates via SSE with fallback polling
 - Browser desktop notifications on status changes
@@ -209,6 +214,58 @@ The dashboard shows all sessions (live and offline), lets you:
 - See a live activity log of status transitions
 - Receive **browser desktop notifications** when any session needs input or hits a usage limit
 
+### Terminal keyboard shortcuts
+
+The web terminal accepts keyboard input like a real terminal:
+
+| Key | Action |
+|---|---|
+| `↑` / `↓` (empty input) | Forward arrow key to tmux — navigate Claude's numbered menus |
+| `↑` / `↓` (with text) | Walk through command history (last 100 sent messages) |
+| `Tab` | Forward Tab to tmux (completion, cycle options) |
+| `Ctrl+C` (empty input) | Send interrupt to tmux |
+| `Ctrl+D` (empty input) | Send EOF to tmux |
+| `Ctrl+U` | Clear the current input line |
+| `Ctrl+L` | Send clear-screen to tmux |
+| Click terminal output | Focus the input field |
+
+Key buttons in the footer (↑ ↓ ⇥ Esc ↵ ^C ^D) send directly to tmux and are useful for touch devices.
+
+### Auto-yes
+
+The **Auto-yes** toggle in the session header automatically presses Enter ~800 ms after Claude's status becomes `needs-response`. This confirms option 1 ("Yes") in Claude Code's permission menus without manual intervention.
+
+Toggle it per session — it resets when you navigate away.
+
+### Menu choice detection
+
+When Claude shows a numbered choice menu, the options are detected from the terminal output and rendered as clickable buttons above the input:
+
+```
+ 1  Yes
+ 2  Yes, and don't ask again this session
+ 3  No, tell Claude what to do differently
+```
+
+Clicking a button navigates to that option using arrow keys then Enter.
+
+**Regex** handles the common case instantly. If it can't parse the output, a **"Parse options…"** button appears — clicking it calls a local **ollama** model for a more robust parse.
+
+To enable ollama fallback, set environment variables before starting the pilot:
+
+```bash
+export OLLAMA_URL=http://localhost:11434   # default
+export OLLAMA_MODEL=phi3:mini             # default; any small model works
+```
+
+### Dashboard quick actions
+
+Each active session card on the dashboard now shows:
+
+- **Snippet** — last 4 meaningful terminal lines (separator and blank lines filtered out), updated every 3 s
+- **CTA buttons** — when `needs-response` and a numbered menu is detected, the choices appear directly on the card so you can respond to multiple agents at once without opening each one
+- **Quick-reply input** — type a message and press Enter or `→` to send without leaving the dashboard
+
 ### Session labels
 
 In the session detail sidebar, assign a label to any session:
@@ -353,6 +410,8 @@ Telegram notifications are sent for:
 | `TELEGRAM_BOT_TOKEN` | — | Telegram bot token |
 | `TELEGRAM_CHAT_ID` | — | Telegram chat ID |
 | `CLAUDE_COMMAND` | `claude` | Command used to start Claude |
+| `OLLAMA_URL` | `http://localhost:11434` | Ollama endpoint for menu option parsing fallback |
+| `OLLAMA_MODEL` | `phi3:mini` | Model used for menu parsing (any small model works) |
 
 ---
 
@@ -377,7 +436,7 @@ Start Claude without `--dangerously-skip-permissions` unless you know what you'r
 - watches output
 - sends notifications
 - sends `continue` after limit resets
-- does **not** auto-approve permissions or execute arbitrary commands
+- **Auto-yes** is opt-in per session and off by default — enable it deliberately when you trust the task
 
 When using the tunnel feature, always set a password. Anyone with the URL can control your sessions.
 
@@ -399,7 +458,10 @@ When using the tunnel feature, always set a password. Anyone with the URL can co
 - [x] message queue per session with auto-feed mode
 - [x] session labels — emoji + color accent
 - [x] sort sessions by status or name
-- [ ] auto-yes rules — confirm prompts automatically by pattern
+- [x] terminal keyboard UX — command history, arrow/Tab/Ctrl key forwarding, click-to-focus
+- [x] auto-yes mode — per-session toggle to confirm Claude permission prompts automatically
+- [x] menu choice detection — numbered menus become CTA buttons; ollama fallback for tricky output
+- [x] dashboard quick-reply and snippet preview per session card
 - [ ] smarter retry logic
 - [ ] usage statistics and session timeline
 - [ ] pluggable notification providers
