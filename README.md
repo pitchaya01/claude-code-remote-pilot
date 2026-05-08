@@ -52,6 +52,7 @@ It's a practical helper tool for people who run Claude Code for extended periods
 **Web dashboard**
 - Full-color terminal output rendered in the browser (24-bit ANSI, bold, dim, italic)
 - Terminal input behaves like a real terminal — command history (↑/↓), Tab forwarding, Ctrl+C/D/U/L, click output to focus
+- **Text selection** — click-drag to copy terminal output; click without selection still focuses the input
 - **Scroll lock** — auto-scroll pauses when you scroll up to read; resumes automatically when you scroll back to the bottom
 - **Blinking status pill** — the "needs input" pill pulses to draw attention; a short sound alert fires on transition (toggleable in the dashboard header)
 - Send messages or special keys; broadcast to all sessions at once
@@ -59,6 +60,8 @@ It's a practical helper tool for people who run Claude Code for extended periods
 - **Menu choice detection** — when Claude shows a numbered menu (1 / 2 / 3), clickable buttons appear automatically; optional ollama fallback for non-standard output
 - **Dashboard quick-reply** — send a message to any session directly from the card without opening the terminal
 - **Snippet preview** — each card shows the last 4 lines of terminal output at a glance
+- **Git tab** — review changes, browse diffs, and commit from the browser without leaving the dashboard
+- **Open in Finder** — one-click button opens the session's working directory in macOS Finder
 - Spawn, kill, or respawn sessions from the browser
 - Live status updates via SSE with fallback polling
 - Browser desktop notifications on status changes
@@ -232,11 +235,14 @@ The web terminal accepts keyboard input like a real terminal:
 | `↑` / `↓` (empty input) | Forward arrow key to tmux — navigate Claude's numbered menus |
 | `↑` / `↓` (with text) | Walk through command history (last 100 sent messages) |
 | `Tab` | Forward Tab to tmux (completion, cycle options) |
+| `Enter` (with text) | Send the message and clear the input |
+| `Enter` (empty input) | Send a bare Enter to tmux — confirm prompts without typing |
+| `Shift+Enter` | Always send a bare Enter to tmux — confirm without clearing a draft |
 | `Ctrl+C` (empty input) | Send interrupt to tmux |
 | `Ctrl+D` (empty input) | Send EOF to tmux |
 | `Ctrl+U` | Clear the current input line |
 | `Ctrl+L` | Send clear-screen to tmux |
-| Click terminal output | Focus the input field |
+| Click terminal output | Focus the input field (only when no text is selected) |
 
 Key buttons in the footer (↑ ↓ ⇥ Esc ↵ ^C ^D) send directly to tmux and are useful for touch devices.
 
@@ -274,6 +280,28 @@ Each active session card on the dashboard now shows:
 - **Snippet** — last N meaningful terminal lines (separator and blank lines filtered out), updated every 3 s. Use the **Snippet: Off / 2 / 4 / 6 / 8** control in the dashboard header to set how many lines to show, or turn them off. Choice is saved across reloads.
 - **CTA buttons** — when `needs-response` and a numbered menu is detected, the choices appear directly on the card so you can respond to multiple agents at once without opening each one
 - **Quick-reply input** — type a message and press Enter or `→` to send without leaving the dashboard
+
+### Git tab
+
+Each session detail view has two tabs: **Terminal** and **Git**. The Git tab gives you a full-width interface for reviewing and committing changes in the session's working directory:
+
+- **File list** (left column) — modified (`~`), untracked (`+`), and deleted (`−`) files with checkboxes. "Select all / Deselect all" at the top.
+- **Diff viewer** (right column) — coloured unified diff for the selected file. Green additions, red removals. Scrollable horizontally for wide diffs.
+- **Commit bar** (top) — type a message and click **↑ Commit all** or **↑ Commit (N files)** to commit selected files. Unselected files are left unstaged.
+
+The Git tab polls for changes every 5 s and hides automatically when the working tree is clean or the directory is not a git repo.
+
+The three API routes it uses:
+
+```
+GET  /api/sessions/:name/git/status       — git status --porcelain
+GET  /api/sessions/:name/git/diff?file=   — staged, unstaged, and untracked diffs
+POST /api/sessions/:name/git/commit       — git add + git commit
+```
+
+### Open in Finder
+
+The session detail header includes a **📂 Finder** button (macOS only). It calls `POST /api/sessions/:name/open-finder` and opens the session's working directory in Finder. The button shows `✓` briefly on success.
 
 ### Telegram toggle
 
@@ -483,6 +511,10 @@ When using the tunnel feature, always set a password. Anyone with the URL can co
 - [x] mobile UX — section controls stack vertically, 44px CTA touch targets, scrollable footer keys
 - [x] mobile card width fix — `min-width:0` on grid items + `overflow-x:hidden` on content area
 - [x] status pill always visible — `flex-shrink:0` on pill, `flex:1;min-width:0` on name container
+- [x] terminal text copy — click-drag selects; focus only stolen when selection is empty
+- [x] Enter on empty sends bare Enter to tmux; Shift+Enter always sends Enter regardless of input
+- [x] git tab — full-width diff viewer and commit UI in the session detail view
+- [x] open in Finder — one-click button from session detail header (macOS)
 - [ ] smarter retry logic
 - [ ] usage statistics and session timeline
 - [ ] pluggable notification providers
