@@ -567,6 +567,10 @@ function Sidebar({ currentScreen, onNavigate, sessionCount, open, onClose, conne
             <span className={`conn-dot ${connected ? '' : 'disconnected'}`} />
             {connected ? 'Connected' : 'Reconnecting…'}
           </div>
+          <a href="https://www.buymeacoffee.com/mekkunks" target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', margin: '4px 8px', borderRadius: 6, background: '#FFDD00', color: '#000', fontSize: 12, fontWeight: 600, textDecoration: 'none', justifyContent: 'center' }}>
+            ☕ Buy me a coffee
+          </a>
         </div>
       </aside>
     </>
@@ -1836,6 +1840,5 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
-<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="mekkunks" data-color="#FFDD00" data-emoji="☕" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
 </body>
 </html>

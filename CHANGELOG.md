@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.7 — 2026-05-08
+
+### Fixed
+- **Buy Me a Coffee button**: replaced off-screen floating script widget with a visible yellow button in the sidebar footer.
+
+---
+
 ## 0.7.6 — 2026-05-08
 
 ### Fixed
