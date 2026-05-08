@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.9 — 2026-05-08
+
+### Added
+- **Remove offline session**: offline sessions can now be removed from history via a trash button on the session card (dashboard) and a "Remove" button in the session detail view. Removal is confirmed with a dialog before proceeding.
+  - `SessionManager.removeFromHistory(name)` — refuses if the session is still active
+  - `DELETE /api/sessions/:name/history` — new endpoint
+  - Offline cards on the dashboard now show Respawn + trash buttons directly (no need to open detail)
+
+---
+
 ## 0.7.8 — 2026-05-08
 
 ### Changed

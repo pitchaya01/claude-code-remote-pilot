@@ -667,9 +667,21 @@ function SessionCard({ session, onNavigate, snippetLines }) {
   const isOffline = session.status === 'offline';
   const [quickMsg, setQuickMsg] = useState('');
   const [sending, setSending] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [ctaHit, setCtaHit] = useState(null);
   const ctaTimerRef = useRef(null);
   const inputRef = useRef(null);
+
+  const handleCardRemove = async (e) => {
+    e.stopPropagation();
+    if (removing) return;
+    if (!confirm(`Remove "${session.name}" from history?`)) return;
+    setRemoving(true);
+    try {
+      await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/history`, { method: 'DELETE' });
+    } catch {}
+    finally { setRemoving(false); }
+  };
 
   const sendQuick = async () => {
     if (!quickMsg.trim() || sending || isOffline) return;
@@ -771,6 +783,14 @@ function SessionCard({ session, onNavigate, snippetLines }) {
             />
             <button className="btn btn-sm" style={{ flexShrink: 0 }} onClick={e => { e.stopPropagation(); sendQuick(); }} disabled={sending || !quickMsg.trim()}>→</button>
           </div>
+        </div>
+      )}
+      {isOffline && (
+        <div style={{ marginTop: 8, display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+          <button className="btn btn-sm btn-primary" style={{ flex: 1 }} onClick={e => { e.stopPropagation(); onNavigate('detail', session); }}>↺ Respawn</button>
+          <button className="btn btn-sm" style={{ color: 'var(--error)', flexShrink: 0 }} onClick={handleCardRemove} disabled={removing} title="Remove from history">
+            {Icons.trash}
+          </button>
         </div>
       )}
     </div>
@@ -1153,6 +1173,16 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
     }
   };
 
+  const handleRemove = async () => {
+    if (!confirm(`Remove "${session.name}" from history? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/history`, { method: 'DELETE' });
+      onKilled();
+    } catch (e) {
+      if (e.message !== 'Unauthorized') alert('Failed to remove session');
+    }
+  };
+
   // Render terminal HTML (ANSI → HTML, with plain-text fallback)
   let _termHtml = '';
   if (output) {
@@ -1184,6 +1214,9 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
             <>
               <button className="btn btn-sm btn-primary" onClick={handleRespawn} disabled={respawning}>
                 {respawning ? 'Respawning…' : '↺ Respawn'}
+              </button>
+              <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={handleRemove} title="Remove from history">
+                {Icons.trash} Remove
               </button>
               {respawnError && (
                 <span style={{ color: 'var(--error)', fontSize: 12, alignSelf: 'center' }}>
