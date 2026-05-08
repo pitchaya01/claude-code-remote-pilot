@@ -214,6 +214,13 @@
   .terminal-body::-webkit-scrollbar-track{background:transparent;}
   .terminal-body::-webkit-scrollbar-thumb{background:oklch(30% 0.02 50);border-radius:3px;}
 
+  /* Menu CTA strip — numbered choice buttons that appear above the input */
+  .menu-cta-strip{display:flex;align-items:center;gap:6px;padding:8px 14px;background:oklch(16% 0.015 50);border-top:1px solid oklch(28% 0.02 50);flex-wrap:wrap;flex-shrink:0;}
+  .menu-cta-btn{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid oklch(38% 0.02 50);background:oklch(22% 0.018 50);color:oklch(82% 0.015 70);font-family:var(--font-mono);font-size:12px;cursor:pointer;transition:background 0.12s,border-color 0.12s;max-width:260px;}
+  .menu-cta-btn:hover{background:oklch(28% 0.02 50);border-color:var(--accent);}
+  .menu-cta-num{font-weight:700;color:var(--accent);flex-shrink:0;}
+  .menu-cta-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
   @media (min-width:768px) {
     .app-shell{flex-direction:row;}
     .sidebar{position:static;width:var(--sidebar-w);height:100vh;max-height:none;transform:none;border-bottom:none;border-right:1px solid var(--border);border-radius:0;display:flex;flex-direction:column;}
@@ -399,6 +406,41 @@ function ansiToHtml(raw) {
   emitText(text.slice(last));
   if (spanOpen) result += '</span>';
   return result;
+}
+
+/* --- Menu option detection --- */
+function detectMenuOptions(raw) {
+  if (!raw) return [];
+  const plain = raw
+    .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+    .replace(/\x1b[()][AB012]/g, '')
+    .replace(/\r/g, '');
+  const lines = plain.split('\n').slice(-50);
+  const found = new Map();
+  for (const line of lines) {
+    const m = line.match(/^\s*(?:[❯>◆│]\s*)?(\d+)[.)]\s+(.+?)\s*$/);
+    if (m) {
+      const num = parseInt(m[1], 10);
+      const label = m[2].replace(/\s*\(esc\)\s*$/i, '').trim();
+      if (num >= 1 && num <= 9 && label) found.set(num, label);
+    }
+  }
+  if (found.size < 2) return [];
+  const opts = [...found.entries()].sort((a, b) => a[0] - b[0]).map(([num, label]) => ({ num, label }));
+  if (opts[0].num !== 1) return [];
+  for (let i = 0; i < opts.length; i++) if (opts[i].num !== i + 1) return [];
+  return opts;
+}
+
+function detectCurrentSelection(raw) {
+  if (!raw) return 1;
+  const plain = raw.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b[()][AB012]/g, '').replace(/\r/g, '');
+  const lines = plain.split('\n').slice(-50);
+  for (const line of lines) {
+    const m = line.match(/^\s*[❯>]\s*(\d+)[.)]/);
+    if (m) return parseInt(m[1], 10);
+  }
+  return 1;
 }
 
 /* --- Icons --- */
@@ -635,6 +677,9 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   const cmdHistoryRef = useRef([]);
   const historyIdxRef = useRef(-1);
   const [autoYes, setAutoYes] = useState(false);
+  const [parsedOptions, setParsedOptions] = useState([]);
+  const [parsedSource, setParsedSource] = useState(null);
+  const [parseLoading, setParseLoading] = useState(false);
 
   const copyAttachCmd = () => {
     const cmd = `tmux attach -t ${session.name}`;
@@ -758,6 +803,41 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
       pollNowRef.current();
     } catch {}
     setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  // Regex-parsed menu options from the current terminal snapshot (fast, synchronous)
+  const menuOptions = React.useMemo(() => detectMenuOptions(output), [output]);
+  const displayOptions = menuOptions.length >= 2 ? menuOptions : parsedOptions;
+
+  // Reset server-parsed options when session changes or regex starts working
+  useEffect(() => { setParsedOptions([]); setParsedSource(null); setParseLoading(false); }, [session.name]);
+  useEffect(() => { if (menuOptions.length >= 2) { setParsedOptions([]); setParsedSource(null); } }, [menuOptions.length]);
+  // Clear when session leaves needs-response state
+  useEffect(() => { if (session.status !== 'needs-response') { setParsedOptions([]); setParsedSource(null); setParseLoading(false); } }, [session.status]);
+
+  const parseWithModel = async () => {
+    setParseLoading(true);
+    try {
+      const r = await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/menu`, { cache: 'no-store' });
+      const d = await r.json();
+      setParsedOptions(d.options || []);
+      setParsedSource(d.source || null);
+    } catch {}
+    finally { setParseLoading(false); }
+  };
+
+  const sendMenuOption = async (targetNum) => {
+    setParsedOptions([]);
+    const current = detectCurrentSelection(output);
+    const delta = targetNum - current;
+    if (delta !== 0) {
+      const key = delta > 0 ? 'Down' : 'Up';
+      for (let i = 0; i < Math.abs(delta); i++) {
+        await sendKey(key);
+        await new Promise(r => setTimeout(r, 80));
+      }
+    }
+    await sendKey('Enter');
   };
 
   const handleKeyDown = (e) => {
@@ -927,6 +1007,27 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
                           : '<span style="color:oklch(50% 0.018 50)">No output yet.</span>'))
             }}
           />
+
+          {/* Numbered-choice CTA strip — appears when Claude shows a 1/2/3 menu */}
+          {!isOffline && session.status === 'needs-response' && (
+            <div className="menu-cta-strip">
+              {displayOptions.map(opt => (
+                <button key={opt.num} className="menu-cta-btn" onClick={() => sendMenuOption(opt.num)}>
+                  <span className="menu-cta-num">{opt.num}</span>
+                  <span className="menu-cta-text">{opt.label}</span>
+                </button>
+              ))}
+              {displayOptions.length === 0 && !parseLoading && (
+                <button className="btn-key" style={{ fontSize: 11 }} onClick={parseWithModel} title="Use local AI model (ollama) to detect menu options">
+                  Parse options…
+                </button>
+              )}
+              {parseLoading && <span style={{ fontSize: 11, color: 'oklch(55% 0.018 50)', fontFamily: 'var(--font-mono)' }}>parsing…</span>}
+              {parsedSource === 'model' && displayOptions.length > 0 && (
+                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'oklch(50% 0.018 50)', fontFamily: 'var(--font-mono)' }}>⚡ ollama</span>
+              )}
+            </div>
+          )}
 
           {!isOffline && (
             <div className="terminal-footer">
