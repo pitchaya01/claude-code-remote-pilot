@@ -71,7 +71,7 @@ It's a practical helper tool for people who run Claude Code for extended periods
 
 **Notifications**
 - Telegram alerts for limit hits, status changes, and tunnel URL on startup
-- **Tap-to-open URL** in every actionable notification — always uses LAN IP (detected regardless of binding), upgrades to the cloudflared tunnel URL when available
+- **Tap-to-open URL** in every actionable notification — LAN IP when bound to `0.0.0.0`, `127.0.0.1` otherwise; upgrades to the cloudflared tunnel URL when available
 - **Telegram on/off toggle** — mute without removing credentials, from the dashboard or CLI (`telegram on|off`)
 - Needs-response alerts debounced to at most once per minute per session
 

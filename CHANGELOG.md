@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.3 — 2026-05-08
+
+### Fixed
+- **Telegram notification URL**: reverted overbroad LAN IP detection from v0.7.1. URL is now `127.0.0.1` when bound to localhost only (sending an unreachable LAN IP would be confusing), and the LAN IP only when explicitly bound to `0.0.0.0`. Tunnel URL still upgrades it once cloudflared is ready.
+
+---
+
 ## 0.7.2 — 2026-05-08
 
 ### Added
