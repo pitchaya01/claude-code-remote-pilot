@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.7 — 2026-05-08
+
+### Changed
+- **Menu CTA hit feedback**: clicking a choice button now disables all buttons immediately and highlights the chosen one in green with a `✓` marker. After 2.5 s they reset to normal so you can retry if the action didn't land. Applies to both the terminal detail strip and the dashboard card buttons.
+
+---
+
 ## 0.6.6 — 2026-05-08
 
 ### Added

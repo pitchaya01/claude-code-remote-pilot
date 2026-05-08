@@ -251,7 +251,7 @@ When Claude shows a numbered choice menu, the options are detected from the term
  3  No, tell Claude what to do differently
 ```
 
-Clicking a button navigates to that option using arrow keys then Enter.
+Clicking a button navigates to that option using arrow keys then Enter. The chosen button turns green with a `✓` and all buttons disable for 2.5 s — long enough to confirm it landed, short enough to retry if something went wrong.
 
 **Regex** handles the common case instantly. If it can't parse the output, a **"Parse options…"** button appears — clicking it calls a local **ollama** model for a more robust parse.
 

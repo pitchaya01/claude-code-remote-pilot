@@ -216,8 +216,11 @@
 
   /* Menu CTA strip — numbered choice buttons that appear above the input */
   .menu-cta-strip{display:flex;flex-direction:column;gap:4px;padding:8px 14px;background:oklch(16% 0.015 50);border-top:1px solid oklch(28% 0.02 50);flex-shrink:0;}
-  .menu-cta-btn{display:flex;width:100%;align-items:center;gap:7px;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid oklch(38% 0.02 50);background:oklch(22% 0.018 50);color:oklch(82% 0.015 70);font-family:var(--font-mono);font-size:12px;cursor:pointer;transition:background 0.12s,border-color 0.12s;}
-  .menu-cta-btn:hover{background:oklch(28% 0.02 50);border-color:var(--accent);}
+  .menu-cta-btn{display:flex;width:100%;align-items:center;gap:7px;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid oklch(38% 0.02 50);background:oklch(22% 0.018 50);color:oklch(82% 0.015 70);font-family:var(--font-mono);font-size:12px;cursor:pointer;transition:background 0.12s,border-color 0.12s,opacity 0.12s;}
+  .menu-cta-btn:hover:not(:disabled){background:oklch(28% 0.02 50);border-color:var(--accent);}
+  .menu-cta-btn:disabled{cursor:default;opacity:0.45;}
+  .menu-cta-btn.hit{border-color:oklch(55% 0.18 145);color:oklch(72% 0.18 145);opacity:1;}
+  .menu-cta-btn.hit .menu-cta-num{color:oklch(72% 0.18 145);}
   .menu-cta-num{font-weight:700;color:var(--accent);flex-shrink:0;}
   .menu-cta-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
 
@@ -620,6 +623,8 @@ function SessionCard({ session, onNavigate, snippetLines }) {
   const isOffline = session.status === 'offline';
   const [quickMsg, setQuickMsg] = useState('');
   const [sending, setSending] = useState(false);
+  const [ctaHit, setCtaHit] = useState(null);
+  const ctaTimerRef = useRef(null);
   const inputRef = useRef(null);
 
   const sendQuick = async () => {
@@ -637,6 +642,9 @@ function SessionCard({ session, onNavigate, snippetLines }) {
 
   const sendMenuOption = async (e, targetNum) => {
     e.stopPropagation();
+    setCtaHit(targetNum);
+    clearTimeout(ctaTimerRef.current);
+    ctaTimerRef.current = setTimeout(() => setCtaHit(null), 2500);
     const delta = targetNum - 1; // option 1 is the ❯ default
     for (let i = 0; i < delta; i++) {
       await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/send`, {
@@ -688,8 +696,14 @@ function SessionCard({ session, onNavigate, snippetLines }) {
       {hasMenu && (
         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }} onClick={e => e.stopPropagation()}>
           {session.menuOptions.map(opt => (
-            <button key={opt.num} className="menu-cta-btn" title={opt.label} onClick={e => sendMenuOption(e, opt.num)}>
-              <span className="menu-cta-num">{opt.num}</span>
+            <button
+              key={opt.num}
+              className={`menu-cta-btn${ctaHit === opt.num ? ' hit' : ''}`}
+              title={opt.label}
+              disabled={ctaHit !== null}
+              onClick={e => sendMenuOption(e, opt.num)}
+            >
+              <span className="menu-cta-num">{ctaHit === opt.num ? '✓' : opt.num}</span>
               <span className="menu-cta-text">{opt.label}</span>
             </button>
           ))}
@@ -803,6 +817,8 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   const [parsedOptions, setParsedOptions] = useState([]);
   const [parsedSource, setParsedSource] = useState(null);
   const [parseLoading, setParseLoading] = useState(false);
+  const [ctaHit, setCtaHit] = useState(null);
+  const ctaTimerRef = useRef(null);
 
   const copyAttachCmd = () => {
     const cmd = `tmux attach -t ${session.name}`;
@@ -975,7 +991,7 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   useEffect(() => { setParsedOptions([]); setParsedSource(null); setParseLoading(false); }, [session.name]);
   useEffect(() => { if (menuOptions.length >= 2) { setParsedOptions([]); setParsedSource(null); } }, [menuOptions.length]);
   // Clear when session leaves needs-response state
-  useEffect(() => { if (session.status !== 'needs-response') { setParsedOptions([]); setParsedSource(null); setParseLoading(false); } }, [session.status]);
+  useEffect(() => { if (session.status !== 'needs-response') { setParsedOptions([]); setParsedSource(null); setParseLoading(false); setCtaHit(null); clearTimeout(ctaTimerRef.current); } }, [session.status]);
 
   const parseWithModel = async () => {
     setParseLoading(true);
@@ -989,6 +1005,9 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   };
 
   const sendMenuOption = async (targetNum) => {
+    setCtaHit(targetNum);
+    clearTimeout(ctaTimerRef.current);
+    ctaTimerRef.current = setTimeout(() => setCtaHit(null), 2500);
     setParsedOptions([]);
     const current = detectCurrentSelection(output);
     const delta = targetNum - current;
@@ -1177,8 +1196,14 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
                 <span style={{ fontSize: 10, color: 'oklch(50% 0.018 50)', fontFamily: 'var(--font-mono)' }}>⚡ ollama</span>
               )}
               {displayOptions.map(opt => (
-                <button key={opt.num} className="menu-cta-btn" title={opt.label} onClick={() => sendMenuOption(opt.num)}>
-                  <span className="menu-cta-num">{opt.num}</span>
+                <button
+                  key={opt.num}
+                  className={`menu-cta-btn${ctaHit === opt.num ? ' hit' : ''}`}
+                  title={opt.label}
+                  disabled={ctaHit !== null}
+                  onClick={() => sendMenuOption(opt.num)}
+                >
+                  <span className="menu-cta-num">{ctaHit === opt.num ? '✓' : opt.num}</span>
                   <span className="menu-cta-text">{opt.label}</span>
                 </button>
               ))}
