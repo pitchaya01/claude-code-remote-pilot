@@ -872,6 +872,7 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
   const [respawning, setRespawning] = useState(false);
   const [respawnError, setRespawnError] = useState('');
   const [copyOk, setCopyOk] = useState(false);
+  const [finderOk, setFinderOk] = useState(false);
   const [connecting, setConnecting] = useState(!isOffline);
   const [pollError, setPollError] = useState(false);
   const terminalRef = useRef(null);
@@ -893,6 +894,14 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
       setCopyOk(true);
       setTimeout(() => setCopyOk(false), 2000);
     }).catch(() => {});
+  };
+
+  const openFinder = async () => {
+    try {
+      await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/open-finder`, { method: 'POST' });
+      setFinderOk(true);
+      setTimeout(() => setFinderOk(false), 1500);
+    } catch {}
   };
 
   // Sync label fields when navigating between sessions
@@ -1212,6 +1221,9 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
           <div className="detail-meta" style={{ maxWidth: 480, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.path}</div>
         </div>
         <div className="detail-actions">
+          <button className="btn btn-sm" onClick={openFinder} title="Open in Finder">
+            {finderOk ? '✓' : '📂'} Finder
+          </button>
           {isOffline && (
             <>
               <button className="btn btn-sm btn-primary" onClick={handleRespawn} disabled={respawning}>
@@ -1375,6 +1387,7 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
             </div>
           </div>
           <QueuePanel session={session} />
+          <GitPanel session={session} />
         </div>
       </div>
     </div>
@@ -1547,6 +1560,129 @@ function BroadcastBar({ activeSessions }) {
         </button>
       </div>
       {result && <div style={{ fontSize: 12, color: 'var(--success)', marginTop: 8 }}>{result}</div>}
+    </div>
+  );
+}
+
+/* --- Git Panel --- */
+function GitPanel({ session }) {
+  const [files, setFiles] = useState([]);
+  const [notGit, setNotGit] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [diff, setDiff] = useState('');
+  const [diffLoading, setDiffLoading] = useState(false);
+  const [commitMsg, setCommitMsg] = useState('');
+  const [checked, setChecked] = useState(new Set());
+  const [committing, setCommitting] = useState(false);
+  const [commitOk, setCommitOk] = useState(false);
+  const [commitErr, setCommitErr] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    const load = () => {
+      apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/git/status`, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => { if (!mounted) return; setNotGit(!!d.notGit); setFiles(d.files || []); })
+        .catch(() => {});
+    };
+    load();
+    const t = setInterval(load, 5000);
+    return () => { mounted = false; clearInterval(t); };
+  }, [session.name]);
+
+  useEffect(() => {
+    if (!selectedFile) { setDiff(''); return; }
+    setDiffLoading(true);
+    apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/git/diff?file=${encodeURIComponent(selectedFile)}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => { setDiff(d.diff || ''); setDiffLoading(false); })
+      .catch(() => setDiffLoading(false));
+  }, [session.name, selectedFile]);
+
+  const toggleCheck = (f) => setChecked(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n; });
+
+  const commit = async () => {
+    if (!commitMsg.trim() || committing) return;
+    setCommitting(true); setCommitErr('');
+    try {
+      const res = await apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/git/commit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: commitMsg, files: checked.size ? [...checked] : [] }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setCommitErr(d.error || 'Commit failed'); return; }
+      setCommitMsg(''); setChecked(new Set()); setSelectedFile(null);
+      setCommitOk(true); setTimeout(() => setCommitOk(false), 2500);
+      apiFetch(`/api/sessions/${encodeURIComponent(session.name)}/git/status`, { cache: 'no-store' })
+        .then(r => r.json()).then(d => setFiles(d.files || [])).catch(() => {});
+    } finally { setCommitting(false); }
+  };
+
+  if (notGit || !files.length) return null;
+
+  const statusMeta = (s) => {
+    if (s === '??' || s === 'A') return { icon: '+', color: 'var(--success)' };
+    if (s === 'D') return { icon: '−', color: 'var(--error)' };
+    return { icon: '~', color: 'var(--warning)' };
+  };
+
+  const renderDiff = (text) => text.split('\n').map((line, i) => {
+    let color = 'oklch(70% 0.015 70)', bg = 'transparent';
+    if (line.startsWith('+') && !line.startsWith('+++')) { color = 'oklch(75% 0.14 145)'; bg = 'oklch(20% 0.06 145 / 0.35)'; }
+    else if (line.startsWith('-') && !line.startsWith('---')) { color = 'oklch(70% 0.18 25)'; bg = 'oklch(20% 0.08 25 / 0.35)'; }
+    else if (line.startsWith('@@')) { color = 'oklch(72% 0.12 250)'; }
+    else if (line.startsWith('diff ') || line.startsWith('index ') || line.startsWith('---') || line.startsWith('+++')) { color = 'oklch(48% 0.015 70)'; }
+    return <div key={i} style={{ color, background: bg, padding: '0 6px', fontFamily: 'var(--font-mono)', fontSize: 11, lineHeight: 1.5, whiteSpace: 'pre', overflowX: 'visible' }}>{line || '​'}</div>;
+  });
+
+  return (
+    <div className="card" style={{ padding: '14px 16px', marginTop: 0 }}>
+      <h3 style={{ marginBottom: 10 }}>
+        Changes
+        <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: 11, padding: '1px 6px', borderRadius: 8, fontWeight: 700, marginLeft: 6 }}>{files.length}</span>
+      </h3>
+
+      <div style={{ marginBottom: 10, border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+        {files.map((f, i) => {
+          const { icon, color } = statusMeta(f.status);
+          const isSelected = selectedFile === f.file;
+          return (
+            <div key={f.file} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', background: isSelected ? 'var(--accent-soft)' : 'transparent', borderBottom: i < files.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <input type="checkbox" checked={checked.has(f.file)} onChange={() => toggleCheck(f.file)} style={{ cursor: 'pointer', flexShrink: 0, accentColor: 'var(--accent)' }} />
+              <span style={{ color, fontFamily: 'var(--font-mono)', fontSize: 11, flexShrink: 0, width: 12, textAlign: 'center' }}>{icon}</span>
+              <button
+                onClick={() => setSelectedFile(isSelected ? null : f.file)}
+                style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', color: isSelected ? 'var(--accent)' : 'var(--fg)', fontFamily: 'var(--font-mono)', fontSize: 11, textAlign: 'left', padding: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                title={f.file}
+              >{f.file}</button>
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedFile && (
+        <div style={{ marginBottom: 10, border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'oklch(12% 0.012 50)', overflow: 'auto', maxHeight: 280 }}>
+          {diffLoading
+            ? <div style={{ padding: 12, color: 'var(--muted)', fontSize: 11 }}>Loading…</div>
+            : diff ? renderDiff(diff) : <div style={{ padding: 12, color: 'var(--muted)', fontSize: 11 }}>No diff</div>}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <input
+          className="form-input"
+          placeholder="Commit message…"
+          value={commitMsg}
+          onChange={e => setCommitMsg(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && commit()}
+          style={{ fontSize: 12 }}
+        />
+        <button className="btn btn-sm btn-primary" onClick={commit} disabled={committing || !commitMsg.trim()}>
+          {commitOk ? '✓ Committed' : committing ? 'Committing…' : `↑ Commit${checked.size ? ` (${checked.size} files)` : ' all'}`}
+        </button>
+        {commitErr && <div style={{ fontSize: 11, color: 'var(--error)', wordBreak: 'break-word' }}>{commitErr}</div>}
+      </div>
     </div>
   );
 }
