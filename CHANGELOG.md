@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0 — 2026-05-09
+
+### Added
+- **/publish skill**: automated npm release workflow — CHANGELOG → README → KB update → version bump → `npm publish` → git commit → git push, invokable as `/publish patch|minor|major`.
+
+---
+
 ## 0.9.1 — 2026-05-09
 
 ### Added
