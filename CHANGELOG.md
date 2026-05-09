@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.3 — 2026-05-09
+
+### Fixed
+- **Back button invisible on mobile**: the Back button had been moved inside `.detail-header` which is `display:none` on mobile, making it impossible to navigate back. Restored to its correct position above the header.
+
+---
+
 ## 0.10.2 — 2026-05-09
 
 ### Fixed
