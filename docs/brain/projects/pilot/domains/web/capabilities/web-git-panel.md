@@ -8,8 +8,8 @@ confidence: source_supported
 source_files:
   - lib/WebServer.js
   - lib/ui.html
-last_reviewed: 2026-05-08
-version: 0.8.2
+last_reviewed: 2026-05-09
+version: 0.8.9
 tags:
   - type/capability
   - domain/web
@@ -22,7 +22,7 @@ Exposes the session workspace's git state to the dashboard, letting users review
 
 ## Backend endpoints
 
-- `GET /api/sessions/:name/git/status` — runs `git status --porcelain` in the session's `path`; returns `{ files: [{ status, file }] }`. Returns `{ notGit: true }` if the directory is not a repo.
+- `GET /api/sessions/:name/git/status` — runs `git status --porcelain -uall` in the session's `path`; returns `{ files: [{ status, file }] }`. The `-uall` flag expands untracked directories to individual files so every file is selectable and diffable. Returns `{ notGit: true }` if the directory is not a repo.
 - `GET /api/sessions/:name/git/diff?file=<path>` — tries `git diff HEAD`, then `git diff --cached`, then `git diff --no-index /dev/null <file>` (for untracked files). Returns `{ diff: "<unified diff text>" }`.
 - `POST /api/sessions/:name/git/commit` — body `{ message, files? }`. Runs `git add <files|.>` then `git commit -m <message>`. Returns `{ ok, output }` or `{ error }`.
 
