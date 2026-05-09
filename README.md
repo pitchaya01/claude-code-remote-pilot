@@ -73,6 +73,7 @@ It's a practical helper tool for people who run Claude Code for extended periods
 **Remote access**
 - **Cloudflared tunnel** built in — one flag exposes the dashboard publicly with password protection and sends the URL via Telegram
 - Tunnel URL shown live in the TUI watch screen
+- **SSH/headless Linux support** — dashboard URL is always printed to the terminal; browser auto-open is skipped when running over SSH or without a display (no `xdg-open` errors)
 
 **Notifications**
 - Telegram alerts for limit hits, status changes, and tunnel URL on startup
