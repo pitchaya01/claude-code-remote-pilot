@@ -800,7 +800,10 @@ function SessionCard({ session, onNavigate, snippetLines }) {
 
       <div className="session-card-body">
         <div className="session-card-field"><div className="session-card-field-label">Started</div><div className="session-card-field-value">{relativeTime(session.startedAt)}</div></div>
-        <div className="session-card-field"><div className="session-card-field-label">Tokens</div><div className="session-card-field-value">{formatTokens(session.tokens)}</div></div>
+        {session.status === 'limit' && session.resumeAt
+          ? <div className="session-card-field"><div className="session-card-field-label" style={{ color: 'var(--warning)' }}>Resets</div><div className="session-card-field-value" style={{ color: 'var(--warning)', fontWeight: 600 }}>{session.resetTime || relativeTime(session.resumeAt)}</div></div>
+          : <div className="session-card-field"><div className="session-card-field-label">Tokens</div><div className="session-card-field-value">{formatTokens(session.tokens)}</div></div>
+        }
       </div>
 
       {(session.queueLength > 0 || session.autoFeed) && (
@@ -906,12 +909,20 @@ function SysInfoBar() {
           </div>
         )}
       </>}
+      {usage && usage.limitResetAt && (
+        <div className="sysinfo-item" style={{ color: 'var(--warning)', fontWeight: 600, gap: 6 }}>
+          <span>⚠ LIMIT</span>
+          <span style={{ fontWeight: 400, fontSize: 11 }}>
+            resets {usage.limitResetTime || relativeTime(usage.limitResetAt)}
+          </span>
+        </div>
+      )}
       {usage && (
-        <div className="sysinfo-item" style={{ marginLeft: 'auto' }}>
+        <div className="sysinfo-item" style={{ marginLeft: usage.limitResetAt ? 8 : 'auto' }}>
           <span className="sysinfo-label">7d</span>
-          <span title={`Input: ${fmtTok(usage.weekInput)} · Output: ${fmtTok(usage.weekOutput)} · Cache read: ${fmtTok(usage.weekCacheRead)} · Cache write: ${fmtTok(usage.weekCacheCreate)}`}>
-            ↑{fmtTok(usage.weekInput)} ↓{fmtTok(usage.weekOutput)}
-            {usage.weekCacheRead > 0 && <span style={{ color: 'var(--muted)', marginLeft: 4 }}>· cache {fmtTok(usage.weekCacheRead)}</span>}
+          <span title={`Output: ${fmtTok(usage.weekOutput)} · Input: ${fmtTok(usage.weekInput)} · Cache read: ${fmtTok(usage.weekCacheRead)} · Messages: ${usage.weekMessages} · Sessions: ${usage.weekSessions}`}>
+            {fmtTok(usage.weekOutput)}out
+            {usage.weekMessages > 0 && <span style={{ color: 'var(--muted)', marginLeft: 5 }}>· {usage.weekMessages}msg</span>}
           </span>
         </div>
       )}

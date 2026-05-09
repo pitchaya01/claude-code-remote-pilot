@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0 — 2026-05-09
+
+### Added
+- **Quota / limit monitoring**: when any session hits the Claude rate limit the sysinfo bar now shows a prominent `⚠ LIMIT · resets HH:MM` indicator in warning yellow. Limit reset time is sourced directly from the session's `resumeAt` / `resetTime` fields — no polling needed.
+- **Session card reset time**: session cards with `status: limit` now show a **Resets** field (warning yellow) in place of the Tokens field, so the reset time is visible at a glance on the dashboard without opening the detail pane.
+- **Weekly message count in sysinfo bar**: the 7-day usage display now shows `Xout · Ymsg` (output tokens + message count from `~/.claude/stats-cache.json`), giving a subscription-friendly proxy for quota usage. Hover for full breakdown.
+- **`/api/usage` extended**: response now includes `weekMessages`, `weekSessions`, `weekTools`, `daily[]` (activity counts from stats-cache), plus `limitResetAt` and `limitResetTime` (soonest rate-limit reset across all active sessions, or `null` when none).
+
+---
+
 ## 0.11.0 — 2026-05-09
 
 ### Added
