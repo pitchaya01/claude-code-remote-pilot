@@ -40,6 +40,10 @@ Top of the page:
 
 `GET /api/sysinfo` — returns `{ cpuPct, totalMem, usedMem, diskTotal, diskUsed }`. CPU % is derived from `os.loadavg()[0] / os.cpus().length`. Disk stats are parsed from `df -k /`; `diskTotal` is computed as `used + available` (not the raw total-blocks column) so the percentage matches `df`'s own Capacity % on macOS APFS and Linux ext4. Added in v0.9.0.
 
+## Usage endpoint
+
+`GET /api/usage` — returns `{ weekInput, weekOutput, weekCacheRead, weekCacheCreate, weekFiles }`. Scans all `~/.claude/projects/**/*.jsonl` files modified in the last 7 days, summing `input_tokens`, `output_tokens`, `cache_read_input_tokens`, and `cache_creation_input_tokens` from every `assistant` message. Result is cached in `_usageCache` for 60 s to avoid repeated filesystem scans. Reads files synchronously on first call; subsequent calls within the TTL return the cached value instantly. Added in v0.11.0.
+
 ## Entry point
 
 `lib/WebServer.js` — started by `bin/claude-pilot.js` when `--web` flag is set or user picks the option

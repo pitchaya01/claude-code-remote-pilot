@@ -858,40 +858,61 @@ function SessionCard({ session, onNavigate, snippetLines }) {
 }
 
 /* --- SysInfo minibar --- */
+function fmtTok(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'k';
+  return String(n);
+}
+
 function SysInfoBar() {
   const [info, setInfo] = useState(null);
+  const [usage, setUsage] = useState(null);
   useEffect(() => {
     let mounted = true;
-    const fetch_ = () => apiFetch('/api/sysinfo', { cache: 'no-store' }).then(r => r.json()).then(d => { if (mounted) setInfo(d); }).catch(() => {});
-    fetch_();
-    const t = setInterval(fetch_, 5000);
-    return () => { mounted = false; clearInterval(t); };
+    const fetchSys = () => apiFetch('/api/sysinfo', { cache: 'no-store' }).then(r => r.json()).then(d => { if (mounted) setInfo(d); }).catch(() => {});
+    const fetchUsage = () => apiFetch('/api/usage', { cache: 'no-store' }).then(r => r.json()).then(d => { if (mounted) setUsage(d); }).catch(() => {});
+    fetchSys(); fetchUsage();
+    const t1 = setInterval(fetchSys, 5000);
+    const t2 = setInterval(fetchUsage, 60000);
+    return () => { mounted = false; clearInterval(t1); clearInterval(t2); };
   }, []);
-  if (!info) return null;
   const fmt = (bytes) => {
     const g = bytes / 1073741824;
     return g >= 1 ? g.toFixed(1) + ' GB' : (bytes / 1048576).toFixed(0) + ' MB';
   };
   const barColor = (pct) => pct > 85 ? 'var(--error)' : pct > 60 ? 'var(--warning)' : 'var(--success)';
-  const memPct = info.totalMem ? Math.round(info.usedMem / info.totalMem * 100) : 0;
-  const diskPct = info.diskTotal ? Math.round(info.diskUsed / info.diskTotal * 100) : 0;
+  const memPct = info?.totalMem ? Math.round(info.usedMem / info.totalMem * 100) : 0;
+  const diskPct = info?.diskTotal ? Math.round(info.diskUsed / info.diskTotal * 100) : 0;
+  if (!info && !usage) return null;
   return (
     <div className="sysinfo-bar">
-      <div className="sysinfo-item">
-        <span className="sysinfo-label">CPU</span>
-        <div className="sysinfo-bar-track"><div className="sysinfo-bar-fill" style={{ width: info.cpuPct + '%', background: barColor(info.cpuPct) }} /></div>
-        <span>{info.cpuPct}%</span>
-      </div>
-      <div className="sysinfo-item">
-        <span className="sysinfo-label">RAM</span>
-        <div className="sysinfo-bar-track"><div className="sysinfo-bar-fill" style={{ width: memPct + '%', background: barColor(memPct) }} /></div>
-        <span>{fmt(info.usedMem)} / {fmt(info.totalMem)}</span>
-      </div>
-      {info.diskTotal > 0 && (
+      {info && <>
         <div className="sysinfo-item">
-          <span className="sysinfo-label">Disk</span>
-          <div className="sysinfo-bar-track"><div className="sysinfo-bar-fill" style={{ width: diskPct + '%', background: barColor(diskPct) }} /></div>
-          <span>{fmt(info.diskUsed)} / {fmt(info.diskTotal)}</span>
+          <span className="sysinfo-label">CPU</span>
+          <div className="sysinfo-bar-track"><div className="sysinfo-bar-fill" style={{ width: info.cpuPct + '%', background: barColor(info.cpuPct) }} /></div>
+          <span>{info.cpuPct}%</span>
+        </div>
+        <div className="sysinfo-item">
+          <span className="sysinfo-label">RAM</span>
+          <div className="sysinfo-bar-track"><div className="sysinfo-bar-fill" style={{ width: memPct + '%', background: barColor(memPct) }} /></div>
+          <span>{fmt(info.usedMem)} / {fmt(info.totalMem)}</span>
+        </div>
+        {info.diskTotal > 0 && (
+          <div className="sysinfo-item">
+            <span className="sysinfo-label">Disk</span>
+            <div className="sysinfo-bar-track"><div className="sysinfo-bar-fill" style={{ width: diskPct + '%', background: barColor(diskPct) }} /></div>
+            <span>{fmt(info.diskUsed)} / {fmt(info.diskTotal)}</span>
+          </div>
+        )}
+      </>}
+      {usage && (
+        <div className="sysinfo-item" style={{ marginLeft: 'auto' }}>
+          <span className="sysinfo-label">7d</span>
+          <span title={`Input: ${fmtTok(usage.weekInput)} · Output: ${fmtTok(usage.weekOutput)} · Cache read: ${fmtTok(usage.weekCacheRead)} · Cache write: ${fmtTok(usage.weekCacheCreate)}`}>
+            ↑{fmtTok(usage.weekInput)} ↓{fmtTok(usage.weekOutput)}
+            {usage.weekCacheRead > 0 && <span style={{ color: 'var(--muted)', marginLeft: 4 }}>· cache {fmtTok(usage.weekCacheRead)}</span>}
+          </span>
         </div>
       )}
     </div>

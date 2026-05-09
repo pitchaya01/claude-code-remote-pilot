@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0 — 2026-05-09
+
+### Added
+- **Weekly usage in sysinfo bar**: the dashboard minibar now shows 7-day token totals (`↑input ↓output · cache N`) sourced directly from Claude Code's JSONL conversation files (`~/.claude/projects/**/*.jsonl`). No session disruption — reads files in the background, cached 60 s. Hover for full breakdown (input / output / cache read / cache write).
+
+---
+
 ## 0.10.3 — 2026-05-09
 
 ### Fixed
