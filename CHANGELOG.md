@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.8 — 2026-05-09
+
+### Fixed
+- **SSH/headless Linux support**: `xdg-open` is no longer called in SSH sessions or displayless Linux environments, which caused a crash/error. The dashboard URL is now always printed to the terminal; the browser only opens automatically on desktop environments.
+
+---
+
 ## 0.8.7 — 2026-05-09
 
 ### Changed
