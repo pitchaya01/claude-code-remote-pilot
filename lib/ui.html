@@ -174,11 +174,11 @@
   .sysinfo-label{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-size:10px;font-family:var(--font-body);}
   .sysinfo-bar-track{width:56px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
   .sysinfo-bar-fill{height:100%;border-radius:2px;transition:width 0.4s ease;}
-  .stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-  .stat-card{padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-inner);}
-  .stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:6px;}
-  .stat-value{font-size:22px;font-weight:700;font-family:var(--font-display);color:var(--fg);line-height:1.2;}
-  .stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+  .stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .stat-card{padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-inner);}
+  .stat-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:3px;}
+  .stat-value{font-size:18px;font-weight:700;font-family:var(--font-display);color:var(--fg);line-height:1.2;}
+  .stat-sub{font-size:10px;color:var(--muted);margin-top:2px;}
 
   .activity-list{list-style:none;}
   .activity-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
@@ -273,7 +273,7 @@
     .header{display:flex;}
     .content{padding:24px;}
     .session-cards{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
-    .stat-row{grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+    .stat-row{grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
     .detail-grid{grid-template-columns:1fr 280px;gap:20px;}
     .detail-header{flex-direction:row;align-items:flex-start;gap:16px;margin-bottom:20px;}
     .detail-title{font-size:20px;}
@@ -910,7 +910,7 @@ function DashboardScreen({ onNavigate, sessions, activity, serverStatus, sortBy,
       <div className="stat-row">
         <div className="stat-card"><div className="stat-label">Running</div><div className="stat-value">{running.length}</div><div className="stat-sub">of {sessions.length} total</div></div>
         <div className="stat-card"><div className="stat-label">Active</div><div className="stat-value">{active.length}</div><div className="stat-sub">tmux sessions</div></div>
-        <div className="stat-card"><div className="stat-label">Supervisor</div><div className="stat-value" style={{ color: 'var(--success)', fontSize: 15 }}>Online</div><div className="stat-sub">:{port}</div></div>
+        <div className="stat-card"><div className="stat-label">Supervisor</div><div className="stat-value" style={{ color: 'var(--success)', fontSize: 13 }}>Online</div><div className="stat-sub">:{port}</div></div>
         <BroadcastCard activeSessions={active.length} />
       </div>
 
@@ -1355,7 +1355,6 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
 
       <div className="detail-header">
         <div>
-          <h2 className="detail-title">{emoji ? <span style={{ marginRight: 6 }}>{emoji}</span> : null}{session.name}</h2>
           <div className="detail-meta" style={{ maxWidth: 480, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.path}</div>
         </div>
         <div className="detail-actions">

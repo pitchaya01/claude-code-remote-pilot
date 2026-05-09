@@ -8,7 +8,7 @@ confidence: source_supported
 source_files:
   - lib/WebServer.js
 last_reviewed: 2026-05-09
-version: 0.9.0
+version: 0.10.2
 tags:
   - type/capability
   - domain/web
@@ -38,7 +38,7 @@ Top of the page:
 
 ## Sysinfo endpoint
 
-`GET /api/sysinfo` — returns `{ cpuPct, totalMem, usedMem, diskTotal, diskUsed }`. CPU % is derived from `os.loadavg()[0] / os.cpus().length`. Disk stats are parsed from `df -k /`. Added in v0.9.0.
+`GET /api/sysinfo` — returns `{ cpuPct, totalMem, usedMem, diskTotal, diskUsed }`. CPU % is derived from `os.loadavg()[0] / os.cpus().length`. Disk stats are parsed from `df -k /`; `diskTotal` is computed as `used + available` (not the raw total-blocks column) so the percentage matches `df`'s own Capacity % on macOS APFS and Linux ext4. Added in v0.9.0.
 
 ## Entry point
 

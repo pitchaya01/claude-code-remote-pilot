@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.2 — 2026-05-09
+
+### Fixed
+- **Disk usage percentage wrong on macOS APFS**: `df -k` total-blocks column does not reflect real usable space on APFS volumes. Percentage is now computed as `used / (used + available)`, which matches the Capacity % that `df` itself reports.
+
+### Changed
+- **Stat cards leaner**: padding reduced (`14px → 10px/12px`), value font smaller (`22px → 18px`), label/sub text tighter — cards take noticeably less vertical space on both mobile and desktop.
+
+---
+
 ## 0.10.1 — 2026-05-09
 
 ### Changed
