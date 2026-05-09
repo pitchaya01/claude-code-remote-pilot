@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.6 — 2026-05-09
+
+### Removed
+- **Quota bars** (`Ses %` / `Wk %`): removed `/api/quota` endpoint, `_fetchQuota()`, and UI bars. The tmux approach couldn't reliably read `claude /usage` in all server environments.
+
+---
+
 ## 0.12.5 — 2026-05-09
 
 ### Fixed
