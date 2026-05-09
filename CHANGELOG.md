@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9.1 — 2026-05-09
+
+### Added
+- **Emoji avatar on session cards**: each session card shows a 40 px circular avatar on the left — the chosen emoji, or the first letter of the session name as a fallback. The color accent (if set) tints the avatar background.
+- **Emoji preset picker**: the Label section in session detail (desktop sidebar + mobile Info tab) now shows a 12-preset emoji grid instead of a plain text input. Clicking a preset selects it (click again to deselect); a free-text fallback input below accepts any custom emoji.
+- **Active sort mode** (new default): sessions are grouped as active (running + needs-response) → idle → inactive, then sorted by name within each group. Prevents cards from bouncing position when a session flips between `running` and `needs-response`.
+
+### Fixed
+- **Sysinfo bar NaN**: CPU/RAM/disk values showed `NaN MB` due to a missing `.then(r => r.json())` in the fetch chain. Resolved.
+- **Terminal and git panel overflow**: terminal body height on desktop was slightly taller than the viewport. Corrected height expressions for both desktop and mobile.
+- **Telegram needs-response delay**: Telegram notification for `needs-response` is now sent only after 30 seconds of no user interaction. If the user responds within that window the notification is suppressed entirely, reducing noise from brief prompts.
+
+### Changed
+- **Mobile button size**: key shortcut buttons in the terminal footer are ~10 % smaller on mobile to improve tap density.
+- **Mobile detail header hidden**: the session title / path bar is hidden on mobile to reclaim vertical space for the terminal.
+
+---
+
 ## 0.9.0 — 2026-05-09
 
 ### Added
