@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.7 — 2026-05-10
+
+### Fixed
+- **Auto-resume stuck in limit loop**: when the usage limit is still active after the calculated reset time, the resume command was sent repeatedly, causing `"You've hit your limit"` to appear over and over. Now checks pane output after the reset timer — if limit message is still visible, defers resume by 60s instead of sending the resume command.
+
+---
+
 ## 0.12.6 — 2026-05-09
 
 ### Removed
