@@ -1,6 +1,6 @@
 # Tasks
 
-## Current version: 0.12.9 (published)
+## Current version: 0.12.10 (published)
 
 ---
 
@@ -19,6 +19,14 @@
 - [x] Clear flag when session returns to running state
 - [x] KB updated with retry prevention logic
 - [x] CHANGELOG and version bumped to 0.12.9
+- [x] Published to npm
+
+## Completed (v0.12.10)
+- [x] lib/Watcher.js: keep _limitHandlingUntil set for 5min after resume (don't clear immediately)
+- [x] Prevents immediate retry if limit re-appears after resume attempt
+- [x] Gives Claude time to actually process the resume command
+- [x] Fixes "telegram resume every 5 min" issue
+- [x] CHANGELOG and version bumped to 0.12.10
 - [x] Published to npm
 
 ---
