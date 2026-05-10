@@ -1,6 +1,17 @@
 # Tasks
 
-## Current version: 0.12.10 (published)
+## Current version: 0.12.11 (published)
+
+## Completed (v0.12.11)
+- [x] Bump patch version for countdown / Telegram limit fix
+- [x] Run tests and package verification
+- [x] Publish release to npm
+
+## Completed (unreleased)
+- [x] Investigate Web UI debug countdown-to-restart behavior and Telegram repeat messages before reset time
+- [x] Update architecture documentation before code changes
+- [x] Add watcher tests around reset countdown / notification retry behavior
+- [x] Apply scoped code fix and update CHANGELOG
 
 ---
 

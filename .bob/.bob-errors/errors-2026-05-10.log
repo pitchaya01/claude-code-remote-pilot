@@ -1,0 +1,45 @@
+
+================================================================================
+ERROR LOGGED: 2026-05-10T13:30:25.400Z
+================================================================================
+Error Name: Error
+Error Message: Missing authorization code
+
+Stack Trace:
+Error: Missing authorization code
+    at Server.<anonymous> (file:///Users/mekku/Library/pnpm/global/5/.pnpm/bobshell@https+++s3.us-south.cloud-object-storage.appdomain.cloud+bob-shell+bobshell-1.0.3.tgz/node_modules/bobshell/bundle/bob.js:2088:209)
+    at Server.emit (node:events:518:28)
+    at parserOnIncoming (node:_http_server:1153:12)
+    at HTTPParser.parserOnHeadersComplete (node:_http_common:117:17)
+================================================================================
+
+
+================================================================================
+ERROR LOGGED: 2026-05-10T13:30:47.977Z
+================================================================================
+Error Name: Error
+Error Message: Missing authorization code
+
+Stack Trace:
+Error: Missing authorization code
+    at Server.<anonymous> (file:///Users/mekku/Library/pnpm/global/5/.pnpm/bobshell@https+++s3.us-south.cloud-object-storage.appdomain.cloud+bob-shell+bobshell-1.0.3.tgz/node_modules/bobshell/bundle/bob.js:2088:209)
+    at Server.emit (node:events:518:28)
+    at parserOnIncoming (node:_http_server:1153:12)
+    at HTTPParser.parserOnHeadersComplete (node:_http_common:117:17)
+================================================================================
+
+
+================================================================================
+ERROR LOGGED: 2026-05-10T13:31:48.616Z
+================================================================================
+Error Name: Error
+Error Message: Missing authorization code
+
+Stack Trace:
+Error: Missing authorization code
+    at Server.<anonymous> (file:///Users/mekku/Library/pnpm/global/5/.pnpm/bobshell@https+++s3.us-south.cloud-object-storage.appdomain.cloud+bob-shell+bobshell-1.0.3.tgz/node_modules/bobshell/bundle/bob.js:2088:209)
+    at Server.emit (node:events:518:28)
+    at parserOnIncoming (node:_http_server:1153:12)
+    at HTTPParser.parserOnHeadersComplete (node:_http_common:117:17)
+================================================================================
+

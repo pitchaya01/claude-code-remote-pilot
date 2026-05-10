@@ -373,6 +373,16 @@ function relativeTime(dateStr) {
   return `${Math.floor(secs / 86400)}d ago`;
 }
 
+function timeUntil(dateStr) {
+  if (!dateStr) return '—';
+  const secs = Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / 1000));
+  if (secs <= 0) return 'now';
+  if (secs < 60) return `${secs}s`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
+  return `${Math.floor(secs / 86400)}d ${Math.floor((secs % 86400) / 3600)}h`;
+}
+
 function formatUptime(startedAt) {
   if (!startedAt) return '—';
   const secs = Math.max(0, Math.floor((Date.now() - new Date(startedAt)) / 1000));
@@ -801,7 +811,7 @@ function SessionCard({ session, onNavigate, snippetLines }) {
       <div className="session-card-body">
         <div className="session-card-field"><div className="session-card-field-label">Started</div><div className="session-card-field-value">{relativeTime(session.startedAt)}</div></div>
         {session.status === 'limit' && session.resumeAt
-          ? <div className="session-card-field"><div className="session-card-field-label" style={{ color: 'var(--warning)' }}>Resets</div><div className="session-card-field-value" style={{ color: 'var(--warning)', fontWeight: 600 }}>{session.resetTime || relativeTime(session.resumeAt)}</div></div>
+          ? <div className="session-card-field"><div className="session-card-field-label" style={{ color: 'var(--warning)' }}>Restart</div><div className="session-card-field-value" style={{ color: 'var(--warning)', fontWeight: 600 }}>{timeUntil(session.resumeAt)}{session.resetTime ? ` · ${session.resetTime}` : ''}</div></div>
           : <div className="session-card-field"><div className="session-card-field-label">Tokens</div><div className="session-card-field-value">{formatTokens(session.tokens)}</div></div>
         }
       </div>
@@ -913,7 +923,7 @@ function SysInfoBar() {
         <div className="sysinfo-item" style={{ color: 'var(--warning)', fontWeight: 600, gap: 6 }}>
           <span>⚠ LIMIT</span>
           <span style={{ fontWeight: 400, fontSize: 11 }}>
-            resets {usage.limitResetTime || relativeTime(usage.limitResetAt)}
+            restart {timeUntil(usage.limitResetAt)}{usage.limitResetTime ? ` · ${usage.limitResetTime}` : ''}
           </span>
         </div>
       )}
@@ -1546,7 +1556,7 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
                 <div className="info-row"><span className="info-label">Started</span><span className="info-value" style={{ fontSize: 11 }}>{relativeTime(session.startedAt)}</span></div>
                 <div className="info-row"><span className="info-label">Tokens</span><span className="info-value" style={{ fontSize: 11 }}>{formatTokens(session.tokens)}</span></div>
                 {session.status === 'limit' && session.resumeAt && (
-                  <div className="info-row"><span className="info-label">Resumes</span><span className="info-value" style={{ fontSize: 11, color: 'var(--warning)' }}>{relativeTime(session.resumeAt)}</span></div>
+                  <div className="info-row"><span className="info-label">Restart</span><span className="info-value" style={{ fontSize: 11, color: 'var(--warning)' }}>{timeUntil(session.resumeAt)}{session.resetTime ? ` · ${session.resetTime}` : ''}</span></div>
                 )}
                 <div className="info-row"><span className="info-label">tmux</span><span className="info-value" style={{ fontSize: 11 }}>{session.name}</span></div>
                 <div className="info-row" style={{ alignItems: 'flex-start', paddingTop: 10, marginTop: 4, borderTop: '1px solid var(--border)' }}>
@@ -1597,7 +1607,7 @@ function SessionDetailScreen({ session, onBack, onKilled, onRespawned }) {
             <div className="info-row"><span className="info-label">Started</span><span className="info-value" style={{ fontSize: 11 }}>{relativeTime(session.startedAt)}</span></div>
             <div className="info-row"><span className="info-label">Tokens</span><span className="info-value" style={{ fontSize: 11 }}>{formatTokens(session.tokens)}</span></div>
             {session.status === 'limit' && session.resumeAt && (
-              <div className="info-row"><span className="info-label">Resumes</span><span className="info-value" style={{ fontSize: 11, color: 'var(--warning)' }}>{relativeTime(session.resumeAt)}</span></div>
+              <div className="info-row"><span className="info-label">Restart</span><span className="info-value" style={{ fontSize: 11, color: 'var(--warning)' }}>{timeUntil(session.resumeAt)}{session.resetTime ? ` · ${session.resetTime}` : ''}</span></div>
             )}
             <div className="info-row"><span className="info-label">tmux</span><span className="info-value" style={{ fontSize: 11 }}>{session.name}</span></div>
             <div className="info-row" style={{ alignItems: 'flex-start', paddingTop: 10, marginTop: 4, borderTop: '1px solid var(--border)' }}>

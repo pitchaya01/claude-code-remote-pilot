@@ -1,6 +1,6 @@
 {
   "name": "claude-code-remote-pilot",
-  "version": "0.12.10",
+  "version": "0.12.12",
   "description": "Interactive Claude Code supervisor — spawn and monitor multiple Claude sessions from a single terminal.",
   "type": "commonjs",
   "repository": {
@@ -20,11 +20,12 @@
     "README.md",
     "CHANGELOG.md",
     "DEVELOPMENT.md",
+    "docs/LIMIT_AUTO_RESUME.md",
     "LICENSE"
   ],
   "scripts": {
     "start": "node bin/claude-pilot.js",
-    "test": "node --test test/config.test.js test/webserver.test.js"
+    "test": "node --test test/config.test.js test/webserver.test.js test/watcher.test.js"
   },
   "keywords": [
     "claude-code",

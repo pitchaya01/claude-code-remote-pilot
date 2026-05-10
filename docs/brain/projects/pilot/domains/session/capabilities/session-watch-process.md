@@ -8,7 +8,7 @@ confidence: source_supported
 source_files:
   - lib/Watcher.js
 last_reviewed: 2026-05-10
-version: 0.12.9
+version: unreleased
 tags:
   - type/capability
   - domain/session
@@ -43,11 +43,12 @@ The 30-second delay for `needs-response` uses `_needsResponseTimer` (a `setTimeo
 `_handleLimit()` is called when `LIMIT_RE` matches the last 15 non-empty lines. It:
 1. Hashes the text and skips if duplicate (same limit message seen already).
 2. Respects a `cooldown` (default 180 s) between resume attempts.
-3. Prevents retry spam with `_limitHandlingUntil` flag — blocks re-entry for 2 min when limit persists after reset time.
-4. Parses the reset time from "resets at HH:MM AM/PM", "resets 6am (Asia/Bangkok)", or "try again in N minutes".
+3. Prevents retry spam with `_limitHandlingUntil` flag — blocks re-entry for 2 min when the recent visible pane still shows a limit after reset time.
+4. Parses the reset time from "resets at HH:MM AM/PM", "resets 6am (Asia/Bangkok)", or "try again in N minutes"; explicit IANA timezones are honored for the `resumeAt` timestamp.
 5. Waits until `resetAtMs` (or `Date.now() + fallbackWait * 1000`).
-6. Sends the `resumeCommand` string to the tmux pane via `spawnSync('tmux', ['send-keys', ...])`.
-7. Notifies Telegram before waiting and after resuming.
+6. Re-checks the last 15 non-empty stripped lines only; old limit text deeper in tmux scrollback does not block resume.
+7. Sends the `resumeCommand` string to the tmux pane via `spawnSync('tmux', ['send-keys', ...])`.
+8. Notifies Telegram before waiting and after resuming.
 
 ## Entry point
 

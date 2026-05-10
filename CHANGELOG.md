@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.11 — 2026-05-10
+
+### Fixed
+- **Limit restart countdown and Telegram repeats**: the Web UI now renders future `resumeAt` values as a restart countdown instead of `0s ago`, and the watcher verifies post-reset limit state using only the recent visible pane window instead of stale tmux scrollback.
+- **Reset timezone handling**: reset timestamps now honor Claude's explicit IANA timezone, such as `resets 6am (Asia/Bangkok)`, when calculating the auto-resume time.
+
+---
+
 ## 0.12.10 — 2026-05-10
 
 ### Fixed

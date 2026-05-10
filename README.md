@@ -46,6 +46,7 @@ It's a practical helper tool for people who run Claude Code for extended periods
 **Session management**
 - Spawn and supervise multiple Claude Code sessions, each in its own persistent tmux window
 - Auto-detect token limit states and resume automatically
+- Show the reset clock and restart countdown when a session is waiting on a usage-limit reset
 - Sessions outlive the pilot process — restart the pilot without losing your work
 - **Terminal resize sync** — tmux pane dimensions automatically match your browser viewport so Claude's menus and borders render at the correct width
 

@@ -146,7 +146,7 @@ test('GET /api/sessions returns 401 without token when password set', async () =
   const p = tmpConfigPath();
   const { port, close } = await startServer(makeMockManager(), 'secret', p);
   try {
-    const { status } = await req(port, 'GET', '/api/sessions');
+    const { status } = await req(port, 'GET', '/api/sessions', null, { 'X-Forwarded-For': '203.0.113.10' });
     assert.equal(status, 401);
   } finally { close(); }
 });

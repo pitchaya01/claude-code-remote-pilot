@@ -22,6 +22,7 @@ lib/ui.html             — React SPA (Babel/CDN, no build step)
 - Each Claude session is a tmux window inside a named tmux session.
 - Config is a single JSON file at `~/.claude-pilot/config.json`.
 - The UI is a single self-contained HTML file served by `WebServer.js`.
+- Limit auto-resume behavior is mapped in `docs/LIMIT_AUTO_RESUME.md`, including session field shapes and countdown display rules.
 
 ---
 
