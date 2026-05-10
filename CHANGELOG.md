@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.9 — 2026-05-10
+
+### Fixed
+- **Limit handling retry spam**: when a usage limit persists after the calculated reset time, the code was allowing `_handleLimit()` to be called repeatedly (every 5 seconds via the check loop), causing duplicate notifications. Added `_limitHandlingUntil` flag to block retry attempts for 2 minutes when limit is still showing, ensuring we wait for the actual reset time instead of falling back to 5-minute retry intervals.
+
+---
+
 ## 0.12.8 — 2026-05-10
 
 ### Fixed

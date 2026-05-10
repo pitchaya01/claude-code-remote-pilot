@@ -106,7 +106,7 @@
     "id": "session-watch-process",
     "type": "capability",
     "name": "Watch Process",
-    "summary": "Poll tmux pane for exit or stale output; parse usage limits with reset times (including timezone); fire callbacks",
+    "summary": "Poll tmux pane for exit or stale output; parse usage limits with reset times (including timezone); prevent retry spam when limit persists; fire callbacks",
     "status": "active",
     "confidence": "source_supported",
     "source_files": [
