@@ -1,6 +1,39 @@
 # Tasks
 
-## Current version: 0.12.11 (published)
+## Current version: 0.13.0 (published)
+
+## Completed (v0.13.0)
+- [x] lib/Watcher.js: detectAgentType() function — strips path/exe suffix, returns 'claude'/'opencode'/'codex'/'generic'
+- [x] lib/Watcher.js: _checkGeneric() — hash-change running/idle detection (stagnant >4 s → idle) for non-Claude agents
+- [x] lib/Watcher.js: _check() branches on _agentType — claude gets full pattern matching, others get _checkGeneric
+- [x] lib/ui.html: codex added to agent dropdown; stale "claude-only" hint replaced with accurate hash-polling hint
+- [x] bin/claude-pilot.js: spawn accepts --opencode/--codex flags; startup mount prompt asks agent choice
+- [x] CHANGELOG, KB, npm published, pushed
+
+## Completed (v0.12.16)
+- [x] lib/WebServer.js: cap SSE connections at 4 (MAX_SSE) — returns 503 when at limit
+- [x] Prevents HTTP/1.1 6-connection-per-origin pool exhaustion when multiple tabs are open
+- [x] Rejected tabs fall back to existing 5s /api/sessions polling
+- [x] KB updated, published, pushed
+
+## Completed (v0.12.15)
+- [x] lib/WebServer.js: wrap `_broadcast()` body in try/catch — uncaught exceptions (spawnSync, JSON.stringify) were crashing Node.js process silently, causing ERR_CONNECTION_REFUSED in browser
+- [x] Errors now logged as `[ERR] broadcast threw: <message>` in debug log instead of crashing
+- [x] KB updated: web-serve-dashboard, web-request-flow, nodes.json, file-hashes.json
+- [x] Published to npm and pushed
+
+## Completed (v0.12.14)
+- [x] bin/claude-pilot.js: fix SIGINT handler regression — Ctrl+C now prints hint only, no longer stops web server
+- [x] Watch mode sort by active status (needs-response/running → idle → limit/offline/ended) matching web UI
+- [x] Watch mode supports >9 sessions: j/k + arrow key navigation, 1–9 quick-select still works
+- [x] Published to npm
+
+## Completed (v0.12.13)
+- [x] bin/claude-pilot.js: fix exit hang — watchStop guard stops draw timer before readline.question()
+- [x] handleExit() calls webServer.stop() before exit prompt
+- [x] SIGTERM handler added; telegram ReferenceError (positional → args[0]) fixed
+- [x] lib/WebServer.js: debug log at ~/.claude/pilot-web-debug.log with per-request timing, SSE events, slow broadcast detection
+- [x] Published to npm
 
 ## Completed (v0.12.11)
 - [x] Bump patch version for countdown / Telegram limit fix
@@ -137,12 +170,6 @@
 - [x] bin/claude-pilot.js: REPL hint updated to include "exit to quit"
 - [x] ui.html: Buy Me a Coffee button script
 - [x] README.md: Buy Me a Coffee badge
-
-## In Progress (v0.12.8)
-- [x] lib/Watcher.js: support reset time format with timezone: "resets 6am (Asia/Bangkok)"
-- [ ] bump version and publish
-
----
 
 ## Backlog
 - [ ] smarter retry logic
