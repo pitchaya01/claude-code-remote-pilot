@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.16 — 2026-05-11
+
+### Fixed
+- **All API calls hang when multiple tabs are open**: Chrome limits HTTP/1.1 to 6 concurrent connections per origin. With 6 browser tabs each holding one SSE (`/events`) connection permanently, all 6 slots were consumed and any new API request (sysinfo poll, sessions poll, user actions) queued indefinitely. Fixed by capping SSE connections at 4 — tabs beyond the cap get HTTP 503 and fall back to the existing 5-second polling fallback already in the frontend.
+
+---
+
 ## 0.12.15 — 2026-05-11
 
 ### Fixed

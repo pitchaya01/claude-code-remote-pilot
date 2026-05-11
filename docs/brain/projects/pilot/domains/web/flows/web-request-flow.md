@@ -37,6 +37,12 @@ How an HTTP request to the dashboard is handled — from token check to response
 
 Since v0.12.15 the entire `_broadcast()` body is wrapped in a top-level try/catch. Exceptions (e.g. a tmux call throwing or JSON serialisation failing) no longer crash the Node.js process; they are logged as `[ERR] broadcast threw: <message>` and the interval continues running.
 
+## SSE connection pool exhaustion (v0.12.16 fix)
+
+Chrome limits HTTP/1.1 to 6 concurrent connections per origin. With 6 browser tabs open, each holding one persistent SSE connection, all 6 slots were consumed. Any subsequent API request (sysinfo poll, session poll, user action) queued indefinitely — the dashboard appeared to update (SSE already open) but every other endpoint was unreachable.
+
+Fixed in v0.12.16: the `/events` handler rejects the 5th+ SSE connection with HTTP 503 (`Retry-After: 10`). At most 4 SSE connections are open simultaneously, leaving 2 connection slots free for API requests. Rejected tabs fall back to the existing 5-second `/api/sessions` polling already built into the frontend.
+
 ## Related
 
 - [[web|Web domain]]

@@ -246,7 +246,7 @@
     "id": "web-request-flow",
     "type": "flow",
     "name": "Web Request Flow",
-    "summary": "Token check → route → read config → response; each request logged with timing; broadcast cycles block event loop — stall risk; since v0.12.15 _broadcast() is try/catch guarded so exceptions log as [ERR] instead of crashing the process",
+    "summary": "Token check → route → read config → response; each request logged with timing; broadcast stall risk; v0.12.15 try/catch on _broadcast(); v0.12.16 SSE cap at 4 prevents HTTP/1.1 pool exhaustion when multiple tabs open",
     "status": "active",
     "confidence": "source_supported",
     "source_files": [

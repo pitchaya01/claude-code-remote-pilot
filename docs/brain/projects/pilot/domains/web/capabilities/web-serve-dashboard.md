@@ -64,6 +64,7 @@ When the server starts it prints `Debug log: ~/.claude/pilot-web-debug.log` to t
 - `[SSE]` client connect/disconnect with running total
 - `[SLOW]` broadcast cycles that block the event loop >200 ms — includes client count and session count; useful for diagnosing API stalls after the first SSE client connects
 - `[ERR]` server-level errors; also emitted when `_broadcast()` throws (v0.12.15+) — catches exceptions that would otherwise crash the process silently
+- `[SSE] rejected new SSE client — at limit` — emitted when the 5th+ SSE connection is refused (v0.12.16+)
 
 ## Entry point
 
