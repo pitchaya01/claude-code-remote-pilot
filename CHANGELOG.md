@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.14 — 2026-05-11
+
+### Fixed
+- **Ctrl+C kills server unexpectedly**: the SIGINT handler added in v0.12.13 called `handleExit()` on any Ctrl+C, including accidental ones while typing at the REPL prompt. Now Ctrl+C at the REPL just prints `(Type exit to quit)` and re-prompts — it no longer stops the web server or exits the process.
+- **Watch mode sort by status**: sessions now sort by active status (needs-response / running → idle → limit / offline / ended) matching the web UI order, instead of alphabetically.
+- **Watch mode supports >9 sessions**: removed the 9-session display cap; use `j`/`k` or arrow keys to navigate all sessions. 1–9 remain as quick-select shortcuts for the first 9 entries.
+
+---
+
 ## 0.12.13 — 2026-05-11
 
 ### Fixed

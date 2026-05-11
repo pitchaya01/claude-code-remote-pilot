@@ -176,6 +176,8 @@ function formatUsage(session) {
 
 // ─── watch mode ───────────────────────────────────────────────────────────────
 
+const STATUS_GROUP = { 'needs-response': 0, running: 0, idle: 1, limit: 2, offline: 2, ended: 2 };
+
 function buildAllSessions(manager) {
   const active = manager.list();
   const activeNames = new Set(active.map(s => s.name));
@@ -183,7 +185,10 @@ function buildAllSessions(manager) {
   const offline = history
     .filter(h => !activeNames.has(h.name))
     .map(h => ({ name: h.name, path: h.path, status: 'offline', startedAt: h.lastSeen, resumeAt: null }));
-  return [...active, ...offline].sort((a, b) => a.name.localeCompare(b.name));
+  return [...active, ...offline].sort((a, b) => {
+    const ag = STATUS_GROUP[a.status] ?? 3, bg = STATUS_GROUP[b.status] ?? 3;
+    return ag !== bg ? ag - bg : a.name.localeCompare(b.name);
+  });
 }
 
 function renderWatchTable(allSessions, selectedIdx, webServer = null) {
@@ -191,7 +196,7 @@ function renderWatchTable(allSessions, selectedIdx, webServer = null) {
   const bar = '  ' + '─'.repeat(NW + SW + UW + TW + 10);
   const header = `  ${'#'.padEnd(3)}${'SESSION'.padEnd(NW)}  ${'STATUS'.padEnd(SW)}  ${'UP'.padEnd(UW)}  ${'USAGE / RESET'.padEnd(TW)}`;
 
-  const rows = allSessions.slice(0, 9).map((s, i) => {
+  const rows = allSessions.map((s, i) => {
     const num = `${i + 1}`;
     const { plain, colored } = formatStatus(s);
     const pad = ' '.repeat(Math.max(0, SW - plain.length));
@@ -210,7 +215,8 @@ function renderWatchTable(allSessions, selectedIdx, webServer = null) {
       footer = `  [t] terminal   [k] kill   Esc: back`;
     }
   } else {
-    footer = `  [1-${Math.min(allSessions.length, 9)}]: select session   w: web ui   q: exit watch`;
+    const navHint = allSessions.length > 9 ? 'j·k/↑↓: navigate' : `1-${allSessions.length}: select`;
+    footer = `  ${navHint}   w: web ui   q: exit watch`;
   }
 
   const lines = ['\n', '  Claude Code Remote Pilot'];
@@ -271,6 +277,21 @@ function startWatch(manager, rl) {
 
     if (key.name === 'escape') {
       selectedIdx = -1;
+      redraw();
+      return;
+    }
+
+    // j / down-arrow: move selection down
+    if (str === 'j' || key.name === 'down') {
+      if (allSessions.length === 0) return;
+      selectedIdx = selectedIdx < 0 ? 0 : Math.min(selectedIdx + 1, allSessions.length - 1);
+      redraw();
+      return;
+    }
+    // k / up-arrow: move selection up
+    if (str === 'k' || key.name === 'up') {
+      if (allSessions.length === 0) return;
+      selectedIdx = selectedIdx < 0 ? allSessions.length - 1 : Math.max(selectedIdx - 1, 0);
       redraw();
       return;
     }
@@ -543,7 +564,10 @@ ${HELP}`);
     prompt: 'claude-pilot> ',
   });
 
-  replRl.on('SIGINT', () => { handleExit(manager, replRl); });
+  replRl.on('SIGINT', () => {
+    process.stdout.write('\n  (Type exit to quit)\n');
+    replRl.prompt();
+  });
   process.once('SIGTERM', () => { handleExit(manager, replRl); });
 
   // Auto-enter watch if there are sessions to monitor
@@ -700,6 +724,7 @@ ${HELP}`);
   });
 
   replRl.on('close', () => {
+    manager._webServer?.stop();
     console.log('\n  Sessions keep running. Use tmux to attach.\n');
     process.exit(0);
   });

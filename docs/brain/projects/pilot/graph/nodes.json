@@ -72,7 +72,7 @@
     "id": "cli-manage-lifecycle",
     "type": "capability",
     "name": "Manage Session Lifecycle",
-    "summary": "Orchestrate start/stop/remove sessions; graceful exit stops watch mode and web server first; SIGINT/SIGTERM handled",
+    "summary": "Orchestrate start/stop/remove sessions; graceful exit via 'exit' command or SIGTERM; Ctrl+C is safe (shows hint only); watch sorted by status, j/k navigation for >9 sessions",
     "status": "active",
     "confidence": "source_supported",
     "source_files": [
