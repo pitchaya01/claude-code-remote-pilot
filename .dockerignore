@@ -1,0 +1,10 @@
+.git
+node_modules
+docs
+test
+*.md
+.bob
+.cursor
+.github
+agents
+TASKS.md

@@ -11,6 +11,8 @@ const WebServer = require('../lib/WebServer');
 const config = require('../lib/config');
 const notifier = require('../lib/notifier');
 
+const DEFAULT_PORT = parseInt(process.env.CRP_PORT || '3742', 10);
+
 // ─── dependency checks ────────────────────────────────────────────────────────
 
 function has(cmd) {
@@ -301,7 +303,7 @@ function startWatch(manager, rl) {
       if (str === 'w' || str === 'W') {
         let webServer = manager._webServer;
         if (!webServer) {
-          webServer = new WebServer(manager, 3742, '127.0.0.1');
+          webServer = new WebServer(manager, DEFAULT_PORT, '127.0.0.1');
           manager._webServer = webServer;
           webServer.start();
         }
@@ -408,7 +410,7 @@ const HELP = `
   spawn <path> [name] [--opencode|--codex]   Start agent at path (defaults to claude)
   list                                       Show all sessions
   watch                                      Live session monitor  (q to exit)
-  web [port] [host] [password] [--tunnel]    Start web dashboard  (default: 3742 127.0.0.1)
+  web [port] [host] [password] [--tunnel]    Start web dashboard  (default: $CRP_PORT 127.0.0.1)
   attach <name>                              Open tmux session in this terminal
   kill <name>                                Stop a session
   resume [message]                           Show or set the message sent after a limit resets
@@ -527,17 +529,17 @@ ${HELP}`);
       }
     }
 
-    const webServer = new WebServer(manager, 3742, webHost, webPassword);
+    const webServer = new WebServer(manager, DEFAULT_PORT, webHost, webPassword);
     manager._webServer = webServer;
     webServer.start();
-    const localUrl = 'http://127.0.0.1:3742';
+    const localUrl = `http://127.0.0.1:${DEFAULT_PORT}`;
     const lanIp = bindLan ? getLanIp() : null;
-    const lanNote = lanIp ? `  ${C.dim}(LAN: http://${lanIp}:3742)${C.reset}` : '';
+    const lanNote = lanIp ? `  ${C.dim}(LAN: http://${lanIp}:${DEFAULT_PORT})${C.reset}` : '';
     console.log(`  ✓ Web dashboard at ${localUrl}${lanNote}`);
 
     // Use LAN IP in notifications only when actually bound to all interfaces.
     // Tunnel URL overrides this once cloudflared is ready.
-    telegram.dashboardUrl = lanIp ? `http://${lanIp}:3742` : localUrl;
+    telegram.dashboardUrl = lanIp ? `http://${lanIp}:${DEFAULT_PORT}` : localUrl;
 
     if (useTunnel) {
       console.log('  Starting cloudflared tunnel...');
@@ -623,7 +625,7 @@ ${HELP}`);
         case 'web': {
           const flags = args.filter(a => a.startsWith('--'));
           const positional = args.filter(a => !a.startsWith('--'));
-          const port = parseInt(positional[0]) || 3742;
+          const port = parseInt(positional[0]) || DEFAULT_PORT;
           const host = positional[1] || '127.0.0.1';
           const password = positional[2] || null;
           const useTunnel = flags.includes('--tunnel');
